@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace Deveel.Data.Expressions {
-	public abstract class ExpressionVisitor {
+	public abstract class ExpressionVisitor : IExpressionVisitor {
 		protected ExpressionVisitor() {
+		}
+
+		Expression IExpressionVisitor.Visit(Expression expression) {
+			return Visit(expression);
 		}
 
 		protected virtual Expression Visit(Expression exp) {
@@ -29,19 +32,19 @@ namespace Deveel.Data.Expressions {
 				case ExpressionType.SmallerOrEqual:
 				case ExpressionType.Greater:
 				case ExpressionType.GreaterOrEqual:
-				case ExpressionType.Equals:
-				case ExpressionType.NotEquals:
+				case ExpressionType.Equal:
+				case ExpressionType.NotEqual:
 					return VisitBinary((BinaryExpression) exp);
 				case ExpressionType.Is:
-					return this.VisitTypeIs((TypeIsExpression) exp);
+					return VisitTypeIs((TypeIsExpression) exp);
 				case ExpressionType.Conditional:
 					return VisitConditional((ConditionalExpression) exp);
 				case ExpressionType.Constant:
-					return this.VisitConstant((ConstantExpression) exp);
+					return VisitConstant((ConstantExpression) exp);
 				case ExpressionType.Variable:
-					return this.VisitVariable((VariableExpression) exp);
+					return VisitVariable((VariableExpression) exp);
 				case ExpressionType.Call:
-					return this.VisitMethodCall((FunctionCallExpression) exp);
+					return VisitMethodCall((FunctionCallExpression) exp);
 				case ExpressionType.Query:
 					return VisitSubQuery((SubQueryExpression) exp);
 				default:
@@ -49,62 +52,61 @@ namespace Deveel.Data.Expressions {
 			}
 		}
 
-		private Expression VisitSubQuery(SubQueryExpression expression) {
-			throw new NotImplementedException();
+		protected virtual Expression VisitSubQuery(SubQueryExpression expression) {
+			return expression;
 		}
 
-		protected virtual Expression VisitUnary(UnaryExpression u) {
-			Expression operand = Visit(u.Operand);
-			if (operand != u.Operand) {
-				return Expression.Unary(u.ExpressionType, operand);
+		protected virtual Expression VisitUnary(UnaryExpression expression) {
+			Expression operand = Visit(expression.Operand);
+			if (operand != expression.Operand)
+				return Expression.Unary(expression.ExpressionType, operand);
+
+			return expression;
+		}
+
+		protected virtual Expression VisitBinary(BinaryExpression expression) {
+			Expression left = Visit(expression.First);
+			Expression right = Visit(expression.Second);
+
+			if (left != expression.First || right != expression.Second)
+				return Expression.Binary(left, expression.ExpressionType, right);
+
+			return expression;
+		}
+
+		protected virtual Expression VisitTypeIs(TypeIsExpression expression) {
+			Expression expr = Visit(expression.Expression);
+			if (expr != expression.Expression) {
+				return Expression.Is(expr, expression.TypeOperand);
 			}
-			return u;
+			return expression;
 		}
 
-		protected virtual Expression VisitBinary(BinaryExpression b) {
-			Expression left = Visit(b.First);
-			Expression right = Visit(b.Second);
-
-			if (left != b.First || right != b.Second) {
-				return Expression.Binary(left, b.ExpressionType, right);
-			}
-
-			return b;
+		protected virtual Expression VisitConstant(ConstantExpression expression) {
+			return expression;
 		}
 
-		protected virtual Expression VisitTypeIs(TypeIsExpression b) {
-			Expression expr = Visit(b.Expression);
-			if (expr != b.Expression) {
-				return Expression.Is(expr, b.TypeOperand);
-			}
-			return b;
-		}
-
-		protected virtual Expression VisitConstant(ConstantExpression c) {
-			return c;
-		}
-
-		protected virtual Expression VisitConditional(ConditionalExpression c) {
-			Expression test = Visit(c.Test);
-			Expression ifTrue = Visit(c.IfTrue);
-			Expression ifFalse = Visit(c.IfFalse);
-			if (test != c.Test || ifTrue != c.IfTrue || ifFalse != c.IfFalse) {
+		protected virtual Expression VisitConditional(ConditionalExpression expression) {
+			Expression test = Visit(expression.Test);
+			Expression ifTrue = Visit(expression.IfTrue);
+			Expression ifFalse = Visit(expression.IfFalse);
+			if (test != expression.Test || ifTrue != expression.IfTrue || ifFalse != expression.IfFalse) {
 				return Expression.Conditional(test, ifTrue, ifFalse);
 			}
-			return c;
+			return expression;
 		}
 
-		protected virtual Expression VisitVariable(VariableExpression p) {
-			return p;
+		protected virtual Expression VisitVariable(VariableExpression expression) {
+			return expression;
 		}
 
-		protected virtual Expression VisitMethodCall(FunctionCallExpression m) {
-			Expression obj = Visit(m.Object);
-			IEnumerable<Expression> args = VisitExpressionList(m.Arguments.ToList().AsReadOnly());
-			if (obj != m.Object || args != m.Arguments) {
-				return Expression.FunctionCall(obj, m.FunctionName, args);
+		protected virtual Expression VisitMethodCall(FunctionCallExpression expression) {
+			Expression obj = Visit(expression.Object);
+			IEnumerable<Expression> args = VisitExpressionList(expression.Arguments.ToList().AsReadOnly());
+			if (obj != expression.Object || args != expression.Arguments) {
+				return Expression.FunctionCall(obj, expression.FunctionName, args);
 			}
-			return m;
+			return expression;
 		}
 
 		protected virtual ReadOnlyCollection<Expression> VisitExpressionList(ReadOnlyCollection<Expression> original) {

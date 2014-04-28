@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 using Deveel.Data.Expressions;
 
 namespace Deveel.Data.Sql {
 	public sealed class FromClause {
 		internal FromClause() {
+			JoinSet = new JoiningSet();
 		}
 
-		private JoiningSet joinSet = new JoiningSet();
 		private List<FromTable> fromTableList = new List<FromTable>();
-		private List<string> allTableNames = new List<string>();
+		private List<ObjectName> allTableNames = new List<ObjectName>();
 		private int tableKey;
 
 		private String CreateNewKey() {
@@ -19,7 +20,7 @@ namespace Deveel.Data.Sql {
 		}
 
 
-		private void AddFromTable(string tableName, FromTable table) {
+		private void AddFromTable(ObjectName tableName, FromTable table) {
 			if (tableName != null) {
 				if (allTableNames.Contains(tableName))
 					throw new ApplicationException("Duplicate table name in FROM clause: " + tableName);
@@ -31,20 +32,20 @@ namespace Deveel.Data.Sql {
 			string key = CreateNewKey();
 			table.UniqueKey = key;
 			// Add the table key to the join set
-			joinSet.AddTable(key);
+			JoinSet.AddTable(key);
 			// Add to the alias def map
 			fromTableList.Add(table);
 		}
 
-		public void AddTable(string tableName) {
+		public void AddTable(ObjectName tableName) {
 			AddFromTable(tableName, new FromTable(tableName));
 		}
 
-		public void AddTable(string tableName, string tableAlias) {
+		public void AddTable(ObjectName tableName, ObjectName tableAlias) {
 			AddFromTable(tableAlias, new FromTable(tableName, tableAlias));
 		}
 
-		public void AddTableDeclaration(string tableName, TableSelectExpression select, string tableAlias) {
+		public void AddTableDeclaration(ObjectName tableName, TableSelectExpression select, ObjectName tableAlias) {
 			// This is an inner select in the FROM clause
 			if (tableName == null && select != null) {
 				if (tableAlias == null) {
@@ -68,20 +69,18 @@ namespace Deveel.Data.Sql {
 		}
 
 		public void AddJoin(JoinType type) {
-			joinSet.AddJoin(type);
+			JoinSet.AddJoin(type);
 		}
 
 		public void AddPreviousJoin(JoinType type, Expression onExpression) {
-			joinSet.AddPreviousJoin(type, onExpression);
+			JoinSet.AddPreviousJoin(type, onExpression);
 		}
 
 		public void AddJoin(JoinType type, Expression onExpression) {
-			joinSet.AddJoin(type, onExpression);
+			JoinSet.AddJoin(type, onExpression);
 		}
 
-		public JoiningSet JoinSet {
-			get { return joinSet; }
-		}
+		public JoiningSet JoinSet { get; private set; }
 
 		public JoinType GetJoinType(int n) {
 			return JoinSet.GetJoinType(n);
@@ -93,6 +92,11 @@ namespace Deveel.Data.Sql {
 
 		public ICollection<FromTable> AllTables {
 			get { return fromTableList.AsReadOnly(); }
+		}
+
+		internal void DumpSqlTo(StringBuilder builder) {
+			builder.Append("FROM ");
+
 		}
 	}
 }

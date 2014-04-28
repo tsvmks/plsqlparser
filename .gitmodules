@@ -1,0 +1,3 @@
+[submodule "src/PlSqlParser/Deveel.Math"]
+	path = src/PlSqlParser/Deveel.Math
+	url = git@github.com:deveel/deveel-math.git

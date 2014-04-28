@@ -15,9 +15,10 @@ using System.Text.RegularExpressions;
 
 using Deveel.Data.Expressions;
 using Deveel.Data.Sql.Statements;
+using Deveel.Data.Types;
 
 class PlSql {
-    private String lastObjectReference = null;
+    private ObjectName lastObjectReference = null;
 
     protected bool seeTYPE() {
         return "TYPE".Equals(GetToken(1).image, StringComparison.OrdinalIgnoreCase);
@@ -229,11 +230,15 @@ void CompilationUnit():
   | "CALL" ProcedureCall()
 }
 
-void BindVariable():
-{}
+VariableBind BindVariable():
+{ Token t1 = null, t2 = null; String s = null; }
 {
-    <S_BIND>
-  | ":" (<S_NUMBER> | <S_IDENTIFIER> ["." <S_IDENTIFIER>])
+	(
+		  t1 = <S_BIND> { s = t1.image; }
+		| ":" ( t1 = <S_NUMBER> { s = t1.image; }
+		| t1 = <S_IDENTIFIER> ["." t2 = <S_IDENTIFIER>] { s = t1.image; if (t2 != null) s += "." + t2.image; } )
+  )
+  { return new VariableBind(s); }
 }
 
 void AlterSession():
@@ -340,38 +345,46 @@ void ConstantDeclaration():
                         (":=" | "DEFAULT" ) PlSqlExpression()
 }
 
-void TypeDefinition():
-{}
+DataType TypeDefinition():
+{ DataType dataType = null;
+  Token tRef = null; ObjectName objRef = null; bool rowType = false, extRef = false; }
 {
-    BasicDataTypeDefinition()
+	(
+    dataType = BasicDataTypeDefinition()
     |
-    "TABLE" "OF" TypeDefinition() [LOOKAHEAD(2) "INDEX" "BY" BasicDataTypeDefinition()]
+    LOOKAHEAD(2) ( 
+		tRef = <S_IDENTIFIER> 
+		( "%TYPE" | "%ROWTYPE" { rowType = true; } ))
     |
-    LOOKAHEAD(2) (<S_IDENTIFIER> ("%TYPE" | "%ROWTYPE"))
+    LOOKAHEAD(TableColumn() "%TYPE") objRef = TableColumn()"%TYPE"
     |
-    LOOKAHEAD(TableColumn() "%TYPE")TableColumn()"%TYPE"
-    |
-    <S_IDENTIFIER>  // For Alert declarations etc, in Forms
+    tRef = <S_IDENTIFIER> { extRef = true; }
+	)
+	{ return dataType != null ? dataType : ParserUtil.RefType(tRef, objRef, rowType, extRef); }
 }
 
 
 
-void BasicDataTypeDefinition():
-{}
+DataType BasicDataTypeDefinition():
+{ SqlType sqlType = SqlType.Unknown;
+  Token size = null, scale = null; }
 {
-    (       "CHAR"
-        |   "VARCHAR"
-        |   "VARCHAR2"
-        |   "INTEGER"
-        |   "NUMBER"
-        |   "NATURAL"
-        |   "REAL"
-        |   "FLOAT"
-    ) [ "(" <S_NUMBER> [ "," <S_NUMBER> ] ")" ]
+	(
+    (       "CHAR"			{ sqlType = SqlType.Char; }
+        |   "VARCHAR"		{ sqlType = SqlType.VarChar; }
+        |   "VARCHAR2"		{ sqlType = SqlType.VarChar; }
+        |   "INTEGER"		{ sqlType = SqlType.Integer; }
+        |   "NUMBER"		{ sqlType = SqlType.Numeric; }
+        |   "NATURAL"		{ sqlType = SqlType.Decimal; }
+        |   "REAL"			{ sqlType = SqlType.Real; }
+        |   "FLOAT"			{ sqlType = SqlType.Float; }
+    ) [ "(" size = <S_NUMBER> [ "," scale = <S_NUMBER> ] ")" ]
 
-    |   "DATE"
-    |   "BINARY_INTEGER"
-    |   "BOOLEAN"
+    |   "DATE"				{ sqlType = SqlType.Date; }
+    |   "BINARY_INTEGER"	{ sqlType = SqlType.Binary; }
+    |   "BOOLEAN"			{ sqlType = SqlType.Boolean; }
+	)
+	{ return ParserUtil.PrimitiveType(sqlType, size, scale); }
 }
 
 
@@ -446,7 +459,7 @@ Statement PLSQLStatement():
     |
     [DeclarationSection()] BeginEndBlock()
     |
-    LOOKAHEAD(DataItem() ":=") AssignmentStatement()
+    LOOKAHEAD(DataItem() ":=") statement = AssignmentStatement()
     |
     LOOKAHEAD(ProcedureCall()) ProcedureCall()
 	)
@@ -507,19 +520,20 @@ void ProcedureCall():
     ProcedureReference() [ "(" [ Arguments() ] ")" ] ";"
 }
 
-string ProcedureReference():
+ObjectName ProcedureReference():
 {
-    String name;
+    ObjectName name;
 }
 {
     name = ObjectReference()
     {return name; }
 }
 
-void AssignmentStatement():
-{}
+AssignmentStatement AssignmentStatement():
+{ }
 {
     DataItem() ":=" PlSqlExpression() ";"
+	{ return null; }
 }
 
 
@@ -709,7 +723,7 @@ void SavepointStatement():
 void UpdateStatement():
 {}
 {
-    "UPDATE" (TableName() | "(" SubQuery() ")") [OracleObjectName()]
+    "UPDATE" (TableName() | "(" SubQuery() ")") [ObjectName()]
     "SET" ColumnValues()
     ["WHERE" (SQLExpression() | "CURRENT" "OF" <S_IDENTIFIER>)]
     [ReturningClause()]
@@ -738,7 +752,7 @@ void ColumnValue():
 void InsertStatement():
 {}
 {
-    "INSERT" "INTO" TableName() [OracleObjectName()]
+    "INSERT" "INTO" TableName() [ObjectName()]
      [ LOOKAHEAD(2) "(" TableColumn() ("," TableColumn())* ")" ]
     ( "VALUES" "(" PlSqlExpressionList() ")" [ReturningClause()]
       | SubQuery()
@@ -758,7 +772,7 @@ void MergeTableReference():
     )
     ["PX_GRANULE" "(" <S_NUMBER> "," <S_IDENTIFIER> "," <S_IDENTIFIER> ")"]
     ["SAMPLE" [ID("BLOCK")] "(" <S_NUMBER> ")"]
-    [ OracleObjectName()] // alias
+    [ ObjectName()] // alias
 
     (Join())*
 }
@@ -786,7 +800,7 @@ void MergeSetColumn():
 void DeleteStatement():
 {}
 {
-    "DELETE" ["FROM"] TableName() [OracleObjectName()]
+    "DELETE" ["FROM"] TableName() [ObjectName()]
     ["WHERE" (SQLExpression() | "CURRENT" "OF" <S_IDENTIFIER> ) ] ";"
 }
 
@@ -826,11 +840,11 @@ Expression PlSqlUnaryLogicalExpression():
 
 Expression PlSqlRelationalExpression():
 { Expression exp = null, otherExp = null;
-  Operator op; }
+  ExpressionType op; }
 {
     exp = PlSqlSimpleExpression()
 
-    ( op = Relop() otherExp = PlSqlSimpleExpression() { exp = ParserUtil.Binary(exp, op, otherExp); }
+    ( op = Relop() otherExp = PlSqlSimpleExpression() { exp = Expression.Binary(exp, op, otherExp); }
       |
       LOOKAHEAD(2) exp = PlSqlInClause(exp)
       |
@@ -894,36 +908,36 @@ Expression IsNullClause(Expression exp):
 
 Expression PlSqlSimpleExpression():
 { Expression exp = null, otherExp = null;
-  Operator op; }
+  ExpressionType op; }
 {
     exp = PlSqlMultiplicativeExpression() 
-	( ("+" { op = Operator.Add; } | 
-	   "-" { op = Operator.Subtract; } | 
-	   "||" { op = Operator.Concat; } ) 
-	   otherExp = PlSqlMultiplicativeExpression() { exp = ParserUtil.Binary(exp, op, otherExp); })*
+	( ("+" { op = ExpressionType.Add; } | 
+	   "-" { op = ExpressionType.Subtract; } | 
+	   "||" { op = ExpressionType.Concat; } ) 
+	   otherExp = PlSqlMultiplicativeExpression() { exp = Expression.Binary(exp, op, otherExp); })*
 	{ return exp; }
 }
 
 
 Expression PlSqlMultiplicativeExpression():
 { Expression exp, otherExp = null;
-  Operator op; }
+  ExpressionType op; }
 {
     exp = PlSqlExponentExpression() 
 	( LOOKAHEAD(1) 
-	  ( "*" { op = Operator.Multiply; } | 
-	    "/" { op = Operator.Divide; } | 
-		ID("MOD") { op = Operator.Modulo; } ) 
-		otherExp = PlSqlExponentExpression() { exp = ParserUtil.Binary(exp, op, otherExp); } )*
+	  ( "*" { op = ExpressionType.Multiply; } | 
+	    "/" { op = ExpressionType.Divide; } | 
+		ID("MOD") { op = ExpressionType.Modulo; } ) 
+		otherExp = PlSqlExponentExpression() { exp = Expression.Binary(exp, op, otherExp); } )*
 	{ return exp; }
 }
 
 Expression PlSqlExponentExpression():
 { Expression exp, otherExp = null;
-  Operator op; }
+  ExpressionType op; }
 {
     exp = PlSqlUnaryExpression() 
-	( "**" { op = Operator.Exponent; } otherExp = PlSqlUnaryExpression() { exp = ParserUtil.Binary(exp, op, otherExp); } )*
+	( "**" { op = ExpressionType.Exponent; } otherExp = PlSqlUnaryExpression() { exp = Expression.Binary(exp, op, otherExp); } )*
 	{ return exp; }
 }
 
@@ -941,7 +955,8 @@ Expression PlSqlUnaryExpression():
 
 Expression PlSqlPrimaryExpression():
 { Expression exp = null, otherExp = null;
-  string refName = null;
+  ObjectName refName = null;
+  VariableBind varBind = null;
   TableSelectExpression selectExp = null;
   Token t; }
 {
@@ -951,7 +966,7 @@ Expression PlSqlPrimaryExpression():
   | exp = SQLCaseExpression()
   | "(" (LOOKAHEAD(3) selectExp = Select() { exp = Expression.Subquery(selectExp); } | 
        exp = PlSqlExpression() { exp = Expression.Subset(exp); } ) ")"
-  | BindVariable()
+  | varBind = BindVariable() { exp = Expression.Variable(varBind); }
   | LOOKAHEAD(2) exp = SQLCastExpression()
   | LOOKAHEAD(IntervalExpression()) IntervalExpression()
   | LOOKAHEAD(2) (<S_IDENTIFIER> | "SQL") "%" ID("FOUND|NOTFOUND|ISOPEN|ROWCOUNT")
@@ -965,18 +980,19 @@ Expression PlSqlPrimaryExpression():
 
 /* ---------------- General Productions --------------------- */
 
-string TableColumn():
-{ string name; }
+ObjectName TableColumn():
+{ ObjectName name; }
 {
     name = ObjectReference()
 	{ return name; }
 }
 
-String OracleObjectName():
-{}
+ObjectName ObjectName():
+{ String s; }
 {
-    <S_IDENTIFIER>        {return token.image;}
-  | <S_QUOTED_IDENTIFIER> {String s = token.image; return s.Substring(1, s.Length - 2);}
+  (  <S_IDENTIFIER>        { s = token.image;}
+  | <S_QUOTED_IDENTIFIER> { s = token.image; s = s.Substring(1, s.Length - 2);} )
+  { return ParserUtil.ObjectName(s); }
 }
 
 String TNSName():
@@ -989,31 +1005,32 @@ String TNSName():
     {return name.ToString();}
 }
 
-Operator Relop():
-{ Operator op ; }
+ExpressionType Relop():
+{ ExpressionType op ; }
 {
-    ( "=" { op = Operator.Equals; }
-  | "!" "=" { op = Operator.NotEquals; }
-  | "#" { op = Operator.Like; }
-  | LOOKAHEAD(2) ">" "=" { op = Operator.GreaterEquals; }
-  | ">" { op = Operator.Greater; }
-  | LOOKAHEAD(2) "<" ">" { op =Operator.NotEquals; }
-  | LOOKAHEAD(2) "<" "=" { op = Operator.SmallerEquals; }
-  | "<" { op = Operator.Smaller; })
+    ( "=" { op = ExpressionType.Equal; }
+  | "!" "=" { op = ExpressionType.NotEqual; }
+  | "#" { op = ExpressionType.Like; }
+  | LOOKAHEAD(2) ">" "=" { op = ExpressionType.GreaterOrEqual; }
+  | ">" { op = ExpressionType.Greater; }
+  | LOOKAHEAD(2) "<" ">" { op =ExpressionType.NotEqual; }
+  | LOOKAHEAD(2) "<" "=" { op = ExpressionType.SmallerOrEqual; }
+  | "<" { op = ExpressionType.Smaller; })
   { return op; }
 }
 
-string TableName():
+ObjectName TableName():
 {
+	ObjectName objName, tempName = null;
     String s;
     StringBuilder name = new StringBuilder();
 }
 {
     // schema.table@link
-    s=OracleObjectName()       {name.Append(s);}
-    [ "." s=OracleObjectName() {name.Append(".").Append(s);} ]
-    [ "@" s=TNSName()          {name.Append("@").Append(s);} ]
-    { return name.ToString();}
+    objName = ObjectName()
+    [ "." tempName = ObjectName() { objName = objName.Child(tempName); } ]
+    [ "@" s = TNSName()          { /* TODO: */ } ]
+    { return objName; }
 }
 
 void ParameterList():
@@ -1051,7 +1068,7 @@ void Argument():
 
 /* ----------- SQL productions start here ----------------- */
 
-Statement SelectStatement():
+SelectStatement SelectStatement():
 { SelectStatement statement = new SelectStatement();
   TableSelectExpression tableSelect; }
 {
@@ -1109,30 +1126,32 @@ TableSelectExpression Select():
 void SelectList(ICollection<SelectColumn> columns):
 { SelectColumn column; }
 {
-    "*" { column = new SelectColumn(Expression.Constant("*")); columns.Add(column); } 
+    "*" { column = new SelectColumn(Expression.Constant(ParserUtil.String("*"))); columns.Add(column); } 
 	  | column = SelectItem() { columns.Add(column); }
 	("," column = SelectItem() { columns.Add(column); } )*
 }
 
 SelectColumn SelectItem():
-{ Expression exp; string name =null, nameExt = null, alias = null; }
+{ Expression exp;
+  ObjectName name = null, nameExt = null, alias = null; }
 {
     (
-        LOOKAHEAD(2) name = OracleObjectName()".*" { exp = Expression.Variable(name + ".*"); } // table.*
-      | LOOKAHEAD(4) name = OracleObjectName()"." nameExt = OracleObjectName() ".*" { exp = Expression.Variable(name + "." + nameExt + ".*"); } // schema.table.*
+        LOOKAHEAD(2) name = ObjectName() ".*" { exp = Expression.Variable(name.Child("*")); } // table.*
+      | LOOKAHEAD(4) name = ObjectName() "." nameExt = ObjectName() ".*" { exp = Expression.Variable(name.Child(nameExt).Child("*")); } // schema.table.*
       | exp = SQLSimpleExpression() // column name or expression
     )
     [ [ "AS" ] alias = SelectItemAlias()]
 	{ return new SelectColumn(exp, alias); }
 }
 
-string SelectItemAlias():
-{ string alias = null; Token t = null; }
+ObjectName SelectItemAlias():
+{ ObjectName alias = null; string s = null; Token t = null; }
 {
-    alias = OracleObjectName()
+   ( alias = ObjectName()
     // Some keywords are acceptable as aliases:
-  | t = "RETURNING" { alias = t.image; } | t = "WHEN" { alias = t.image; }
-  { return alias; }
+	{ return alias; }
+  | t = "RETURNING" { s = t.image; } | t = "WHEN" { s = t.image; }
+  { return ParserUtil.ObjectName(s); } )
 }
 
 void AnalyticFunction():
@@ -1177,7 +1196,10 @@ void IntoClause():
 void DataItem():
 {}
 {
-    (<S_IDENTIFIER> ["." <S_IDENTIFIER>] | BindVariable())
+    ( 
+		<S_IDENTIFIER> ["." <S_IDENTIFIER>] | 
+		BindVariable()
+	)
     [ "(" PlSqlSimpleExpression() ")" ] // collection subscript
 }
 
@@ -1203,17 +1225,15 @@ void QueryTableExpression(FromClause fromClause):
 }
 
 void TableDeclaration(FromClause fromClause):
-{ string name = null, alias = null; TableSelectExpression selectExp = null;}
+{ ObjectName name = null, alias = null; TableSelectExpression selectExp = null;}
 {
     ( name = TableName() // might also be a query name
      | TableCollectionExpression()
-     | LOOKAHEAD(3) "("  SubQuery() ")"
+     | LOOKAHEAD(3) "("  selectExp = SubQuery() ")"
      | "(" TableReference(fromClause) ")"
      | BindVariable() // not valid SQL, but appears in StatsPack SQL text
     )
-    ["PX_GRANULE" "(" <S_NUMBER> "," <S_IDENTIFIER> "," <S_IDENTIFIER> ")"]
-    ["SAMPLE" [ID("BLOCK")] "(" <S_NUMBER> ")"]
-    [ alias = OracleObjectName()] // alias
+    [ alias = ObjectName()] // alias
 	{ fromClause.AddTableDeclaration(name, selectExp, alias); }
 }
 
@@ -1396,7 +1416,8 @@ List<Expression> SQLExpressionList():
 }
 
 Expression SQLRelationalOperatorExpression(Expression exp):
-{ Expression exp1 = null; Operator op; }
+{ Expression exp1 = null; ExpressionType op;
+  TableSelectExpression selectExp = null; }
 {
 
     op = Relop()
@@ -1405,11 +1426,11 @@ Expression SQLRelationalOperatorExpression(Expression exp):
     determine that is is a sub-query
     */
     (   LOOKAHEAD("ANY" | "ALL" | "(" "SELECT")
-        (["ALL" | "ANY"] "(" SubQuery() ")")
+        (["ALL" | "ANY"] "(" selectExp = SubQuery() ")" { exp1 = Expression.Query(selectExp); } )
         |
         ["PRIOR"] exp1 = SQLSimpleExpression()
     )
-	{ return ParserUtil.Binary(exp, op, exp1); }
+	{ return Expression.Binary(exp, op, exp1); }
 }
 
 void SQLInClause():
@@ -1431,29 +1452,29 @@ void SQLLikeClause():
 }
 
 Expression SQLSimpleExpression():
-{ Expression exp1, exp2 = null; Operator op; }
+{ Expression exp1, exp2 = null; ExpressionType op; }
 {
     exp1 = SQLMultiplicativeExpression() 
-	( ("+" { op = Operator.Add; } | "-" { op = Operator.Subtract; } | "||" { op = Operator.Concat; }) 
-	exp2 = SQLMultiplicativeExpression() { exp1 = ParserUtil.Binary(exp1, op, exp2); } )*
+	( ("+" { op = ExpressionType.Add; } | "-" { op = ExpressionType.Subtract; } | "||" { op = ExpressionType.Concat; }) 
+	exp2 = SQLMultiplicativeExpression() { exp1 = Expression.Binary(exp1, op, exp2); } )*
 	{ return exp1; }
 }
 
 
 Expression SQLMultiplicativeExpression():
-{ Expression exp, otherExp = null; Operator op; }
+{ Expression exp, otherExp = null; ExpressionType op; }
 {
     exp = SQLExponentExpression() 
-	( ("*" { op = Operator.Multiply; } | "/" { op = Operator.Divide; } ) 
-	otherExp = SQLExponentExpression() { exp = ParserUtil.Binary(exp, op, otherExp); } )*
+	( ("*" { op = ExpressionType.Multiply; } | "/" { op = ExpressionType.Divide; } ) 
+	otherExp = SQLExponentExpression() { exp = Expression.Binary(exp, op, otherExp); } )*
 	{ return exp; }
 }
 
 Expression SQLExponentExpression():
-{ Expression exp, otherExp = null; Operator op; }
+{ Expression exp, otherExp = null; ExpressionType op; }
 {
     exp = SQLUnaryExpression() 
-	( "**" otherExp = SQLUnaryExpression() { exp = ParserUtil.Binary(exp, Operator.Exponent, otherExp); } )*
+	( "**" otherExp = SQLUnaryExpression() { exp = Expression.Binary(exp, ExpressionType.Exponent, otherExp); } )*
 	{ return exp; }
 }
 
@@ -1469,22 +1490,23 @@ Expression SQLUnaryExpression():
 
 Expression SQLPrimaryExpression():
 { Expression exp = null; Token t; TableSelectExpression selectExpr = null;
-  string columnName = null; }
+  ObjectName name = null;
+  VariableBind varBind = null; }
 {
   (
     t = <S_NUMBER> { exp = Expression.Constant(ParserUtil.Number(t.image)); }
   | t = <S_CHAR_LITERAL> { exp = Expression.Constant(ParserUtil.Unquote(t.image));}
-  | "NULL" { exp = Expression.Constant(null); }
+  | "NULL" { exp = Expression.Constant(ParserUtil.Null()); }
   | exp = SQLCaseExpression()
   | "(" (LOOKAHEAD(3) selectExpr = Select() { exp = Expression.Subquery(selectExpr); } | 
            exp = SQLExpression()) { exp = Expression.Subset(exp); } ")"
-  | BindVariable()
+  | varBind = BindVariable() { exp = Expression.Variable(varBind); }
   | LOOKAHEAD(2) exp = SQLCastExpression()
   | LOOKAHEAD(IntervalExpression()) IntervalExpression()
   | LOOKAHEAD(OuterJoinExpression()) OuterJoinExpression()
   | LOOKAHEAD({seeAnalyticFunction()}) AnalyticFunction()
   | LOOKAHEAD(FunctionReference() "(") exp = FunctionCall()
-  | columnName =  TableColumn() { exp = Expression.Variable(columnName); } // Might be a call to a parameter-less function.
+  | name =  TableColumn() { exp = Expression.Variable(name); } // Might be a call to a parameter-less function.
   )
   { return exp; }
 }
@@ -1533,7 +1555,7 @@ void IntervalExpression():
 
 Expression FunctionCall():
 { Token t; 
-  string name;
+  ObjectName name;
   string dateTimeField;
   Expression exp = null; 
   List<FunctionArgument> args = new List<FunctionArgument>(); 
@@ -1543,22 +1565,22 @@ Expression FunctionCall():
 {
     name = FunctionReference() 
 	(
-        LOOKAHEAD({"TRIM".Equals(lastObjectReference, StringComparison.OrdinalIgnoreCase)}) args = TrimArguments()
-      | LOOKAHEAD({"EXTRACT".Equals(lastObjectReference, StringComparison.OrdinalIgnoreCase)}) 
-	    "(" dateTimeField = DatetimeField() { args.Add(new FunctionArgument(Expression.Constant(dateTimeField))); }
+        LOOKAHEAD({"TRIM".Equals(lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase)}) args = TrimArguments()
+      | LOOKAHEAD({"EXTRACT".Equals(lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase)}) 
+	    "(" dateTimeField = DatetimeField() { args.Add(new FunctionArgument(Expression.Constant(ParserUtil.String(dateTimeField)))); }
 		 "FROM" exp = SQLSimpleExpression() { args.Add(new FunctionArgument(exp));} ")"
       | [ "(" [["ALL" { isAll = true;} | "DISTINCT" { distinct = true; } | "UNIQUE"] 
 	  ( args =FunctionArgumentList() | 
-	  "*" { exp = Expression.Constant("*"); args.Add(new FunctionArgument(exp)); } )] ")" ]
+	  "*" { exp = Expression.Constant(ParserUtil.String("*")); args.Add(new FunctionArgument(exp)); } )] ")" ]
     )
     // "all/distinct/unique/*" are permitted only with aggregate functions,
     // but this parser allows their use with any function.
 	{ return Expression.FunctionCall(name, args.ToArray());}
 }
 
-string FunctionReference():
+ObjectName FunctionReference():
 {
-    String name;
+    ObjectName name;
 }
 {
     name = ObjectReference()
@@ -1588,7 +1610,7 @@ List<FunctionArgument> TrimArguments():
   Token t = null; }
 {
     "(" ( LOOKAHEAD({Regex.IsMatch(GetToken(1).image, "(?i)LEADING|TRAILING|BOTH")})
-            t = <S_IDENTIFIER> { args.Add(new FunctionArgument(Expression.Constant(t.image))); } 
+            t = <S_IDENTIFIER> { args.Add(new FunctionArgument(Expression.Constant(ParserUtil.String(t.image)))); } 
 			[ exp = SQLSimpleExpression() { args.Add(new FunctionArgument(exp)); }] 
 			"FROM" exp = SQLSimpleExpression() { args.Add(new FunctionArgument(exp)); }
         | exp = SQLSimpleExpression() { args.Add(new FunctionArgument(exp)); } 
@@ -1605,19 +1627,14 @@ string DatetimeField():
    { return t.image; }
 }
 
-String ObjectReference():
+ObjectName ObjectReference():
+{  ObjectName name, nameExt = null; }
 {
-    String s;
-    StringBuilder name = new StringBuilder();
-}
-{
-    s=OracleObjectName()       {name.Append(s);}
-    [ "." s=OracleObjectName() {name.Append(".").Append(s);}
-    [ "." s=OracleObjectName() {name.Append(".").Append(s);}
-    ]]
-    [ "@" ("!" | s=TNSName()   {name.Append("@").Append(s);} )] // remote reference
-    // The @! idiom is undocumented, but accepted by Oracle software.
-    {return lastObjectReference = name.ToString();}
+    name = ObjectName()
+    [ "." nameExt = ObjectName() { name = name.Child(nameExt); }
+    [ "." nameExt = ObjectName() { name = name.Child(nameExt); } ] ]
+    [ "@" ("!" | TNSName()   { /* TODO: */ } )] // remote reference
+    { return lastObjectReference = name; }
 }
 
 void OuterJoinExpression():
@@ -1627,10 +1644,10 @@ void OuterJoinExpression():
 }
 
 TableSelectExpression SubQuery():
-{}
+{ SelectStatement statement; }
 {
-    SelectStatement() 
-	{ return null; }
+    statement = SelectStatement() 
+	{ return statement.SelectExpression; }
 }
 
 /** Expect an <S_IDENTIFIER> with the given value. */

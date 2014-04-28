@@ -2,6 +2,6 @@
 
 namespace Deveel.Data.Expressions {
 	public interface IExpressionVisitor {
-		void Visit(Expression expression);
+		Expression Visit(Expression expression);
 	}
 }

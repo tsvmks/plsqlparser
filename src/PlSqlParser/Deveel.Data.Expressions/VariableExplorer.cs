@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Deveel.Data.Expressions {
 	static class VariableExplorer {
-		public static IEnumerable<string> AllVariables(Expression expression) {
+		public static IEnumerable<VariableBind> AllVariables(Expression expression) {
 			var visitor = new VariableVisitor();
 			visitor.VisitExpression(expression);
 			return visitor.AllVariables.AsEnumerable();
@@ -15,10 +15,10 @@ namespace Deveel.Data.Expressions {
 
 		class VariableVisitor : ExpressionVisitor {
 			public VariableVisitor() {
-				AllVariables = new Collection<string>();
+				AllVariables = new Collection<VariableBind>();
 			}
 
-			public ICollection<string> AllVariables { get; private set; }
+			public ICollection<VariableBind> AllVariables { get; private set; }
 
 			public void VisitExpression(Expression expression) {
 				Visit(expression);

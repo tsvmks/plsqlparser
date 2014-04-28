@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace Deveel.Data.Expressions {
 	public abstract class BinaryExpression : Expression {
@@ -11,6 +12,8 @@ namespace Deveel.Data.Expressions {
 			Second = second;
 		}
 
-		protected abstract object Evaluate(EvaluationContext context);
+		internal virtual Operator Operator {
+			get { return null; }
+		}
 	}
 }

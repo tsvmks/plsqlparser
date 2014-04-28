@@ -2,11 +2,11 @@
 
 namespace Deveel.Data.Expressions {
 	public sealed class VariableExpression : Expression {
-		public VariableExpression(string variableName) {
+		public VariableExpression(VariableBind variableName) {
 			VariableName = variableName;
 		}
 
-		public string VariableName { get; private set; }
+		public VariableBind VariableName { get; private set; }
 
 		public override ExpressionType ExpressionType {
 			get { return ExpressionType.Variable; }

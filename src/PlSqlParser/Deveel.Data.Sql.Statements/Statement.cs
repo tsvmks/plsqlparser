@@ -1,25 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
 
 namespace Deveel.Data.Sql.Statements {
 	[Serializable]
+	[DebuggerDisplay("{ToString(), nq}")]
 	public abstract class Statement {
-		private readonly IDictionary<string, object> elements;
-
 		protected Statement() {
-			elements = new Dictionary<string, object>();
 		}
 
-		public void SetValue(string key, object value) {
-			elements[key] = value;
+		protected virtual void DumpTo(StringBuilder builder) {
 		}
 
-		public object GetValue(string key) {
-			object value;
-			if (!elements.TryGetValue(key, out value))
-				return null;
-
-			return value;
+		public override string ToString() {
+			var builder = new StringBuilder();
+			DumpTo(builder);
+			return builder.ToString();
 		}
 	}
 }

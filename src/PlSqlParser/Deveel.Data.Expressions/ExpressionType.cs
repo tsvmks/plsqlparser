@@ -6,18 +6,21 @@ namespace Deveel.Data.Expressions {
 
 		// Operators
 		Add,
+		Concat,
 		Subtract,
 		Multiply,
 		Divide,
 		Modulo,
 		Exponent,
 
-		Equals,
-		NotEquals,
+		Equal,
+		NotEqual,
 		Greater,
 		GreaterOrEqual,
 		Smaller,
 		SmallerOrEqual,
+
+		Like,
 
 		Any,
 		All,
@@ -37,5 +40,7 @@ namespace Deveel.Data.Expressions {
 
 		Subset,
 		Query,
+		Bind,
+		Assign,
 	}
 }

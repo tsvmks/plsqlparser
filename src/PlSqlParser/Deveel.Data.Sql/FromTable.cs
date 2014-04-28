@@ -2,18 +2,18 @@
 
 namespace Deveel.Data.Sql {
 	public sealed class FromTable {
-		public FromTable(string tableName, string tableAlias) {
+		public FromTable(ObjectName tableName, ObjectName tableAlias) {
 			Name = tableName;
 			Alias = tableAlias;
 			SubSelect = null;
 			IsSubQueryTable = false;
 		}
 
-		public FromTable(string tableName)
+		public FromTable(ObjectName tableName)
 			: this(tableName, null) {
 		}
 
-		public FromTable(TableSelectExpression select, string tableAlias) {
+		public FromTable(TableSelectExpression select, ObjectName tableAlias) {
 			SubSelect = select;
 			Name = tableAlias;
 			Alias = tableAlias;
@@ -27,9 +27,9 @@ namespace Deveel.Data.Sql {
 			IsSubQueryTable = true;
 		}
 
-		public string Name { get; private set; }
+		public ObjectName Name { get; private set; }
 
-		public string Alias { get; private set; }
+		public ObjectName Alias { get; private set; }
 
 		internal string UniqueKey { get; set; }
 

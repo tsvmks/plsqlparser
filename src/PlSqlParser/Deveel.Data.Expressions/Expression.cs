@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
 
 using Deveel.Data.Sql;
 
 namespace Deveel.Data.Expressions {
+	[DebuggerDisplay("{ToString()}")]
 	public abstract class Expression {
 		public abstract ExpressionType ExpressionType { get; }
 
@@ -12,8 +15,33 @@ namespace Deveel.Data.Expressions {
 		}
 
 		private int GetPrecedence() {
+			if (ExpressionType == ExpressionType.Subset)
+				return 58;
+			if (ExpressionType == ExpressionType.Query)
+				return 56;
+			if (ExpressionType == ExpressionType.Cast ||
+				ExpressionType == ExpressionType.Is)
+				return 40;
+			if (ExpressionType == ExpressionType.Multiply ||
+			    ExpressionType == ExpressionType.Divide ||
+			    ExpressionType == ExpressionType.Modulo)
+				return 30;
+			if (ExpressionType == ExpressionType.Add ||
+			    ExpressionType == ExpressionType.Subtract)
+				return 29;
+			if (ExpressionType == ExpressionType.Equal ||
+			    ExpressionType == ExpressionType.NotEqual)
+				return 28;
+
+			if (ExpressionType == ExpressionType.And ||
+			    ExpressionType == ExpressionType.Or)
+				return 20;
+
+			if (ExpressionType == ExpressionType.Assign)
+				return 18;
+
 			// TODO:
-			return -1;
+			return 1;
 		}
 
 		protected virtual void Visit(IExpressionVisitor visitor) {
@@ -39,7 +67,7 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public static Expression Relational(Expression first, ExpressionType op, Expression second) {
-			if (op == ExpressionType.Equals)
+			if (op == ExpressionType.Equal)
 				return Equal(first, second);
 
 			throw new ArgumentException(String.Format("Expression type {0} is not relational", op));
@@ -57,13 +85,20 @@ namespace Deveel.Data.Expressions {
 			return null;
 		}
 
-		public static Expression IsNull(Expression expression) {
-			return null;
+		public static BinaryExpression IsNull(Expression expression) {
+			return Binary(expression, ExpressionType.Is, Expression.Constant(DataObject.Null));
+		}
+
+		public static AddExpression Add(Expression first, Expression second) {
+			return new AddExpression(first, second);
 		}
 
 		public static BinaryExpression Binary(Expression first, ExpressionType type, Expression second) {
-			if (type == ExpressionType.Equals)
+			if (type == ExpressionType.Equal)
 				return Equal(first, second);
+
+			if (type == ExpressionType.Add)
+				return Add(first, second);
 
 			return null;
 		}
@@ -72,7 +107,7 @@ namespace Deveel.Data.Expressions {
 			return null;
 		}
 
-		public static Expression Constant(object value) {
+		public static Expression Constant(DataObject value) {
 			return new ConstantExpression(value);
 		}
 
@@ -89,26 +124,43 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public static Expression Variable(string name) {
+			return Variable(new VariableBind(name));
+		}
+
+		public static VariableExpression Variable(VariableBind name) {
 			return new VariableExpression(name);
 		}
 
-		public static FunctionCallExpression FunctionCall(Expression obj, string functionName, IEnumerable<Expression> arguments) {
+		public static Expression Variable(ObjectName name) {
+			return Variable(new VariableBind(name.ToString()));
+		}
+
+		public static FunctionCallExpression FunctionCall(Expression obj, ObjectName functionName, IEnumerable<Expression> arguments) {
 			return new FunctionCallExpression(obj, functionName, arguments);
 		}
 
-		public static Expression FunctionCall(string functionName, FunctionArgument arg) {
+		public static Expression FunctionCall(ObjectName functionName, FunctionArgument arg) {
+			return FunctionCall(functionName, new[] { arg});
+		}
+
+		public static FunctionCallExpression FunctionCall(ObjectName functionName, IEnumerable<FunctionArgument> args) {
 			return null;
 		}
 
-		public static Expression Conditional(Expression test, Expression ifTrue) {
-			return null;
+		public static FunctionCallExpression FunctionCall(string functionName, IEnumerable<FunctionArgument> args) {
+			return FunctionCall(ObjectName.Parse(functionName), args);
 		}
 
-		public static Expression FunctionCall(string functionName, IEnumerable<FunctionArgument> args) {
-			return null;
+		public static FunctionCallExpression FunctionCall(string functionName, FunctionArgument arg) {
+			return FunctionCall(functionName, new[] {arg});
 		}
 
 		public static Expression Conditional(Expression test, Expression ifTrue, Expression ifFalse) {
+			return null;
+		}
+
+
+		public static Expression Conditional(Expression test, Expression ifTrue) {
 			return null;
 		}
 
@@ -120,6 +172,49 @@ namespace Deveel.Data.Expressions {
 
 		public static Expression Unary(ExpressionType type, Expression expression) {
 			throw new NotImplementedException();
+		}
+
+		protected virtual void DumpToString(StringBuilder sb) {
+		}
+
+		public override string ToString() {
+			var dump = new ExpressionStringDump();
+			return dump.ToString(this);
+		}
+
+		internal void DumpTo(StringBuilder builder) {
+			var dump = new ExpressionStringDump(builder);
+			dump.ToString(this);
+		}
+
+		#region ExpressionStringDump
+
+		class ExpressionStringDump : ExpressionVisitor {
+			private readonly StringBuilder builder;
+
+			public ExpressionStringDump(StringBuilder builder) {
+				this.builder = builder;
+			}
+
+			public ExpressionStringDump()
+				: this(new StringBuilder()) {
+			}
+
+			protected override Expression Visit(Expression exp) {
+				exp.DumpToString(builder);
+				return base.Visit(exp);
+			}
+
+			public string ToString(Expression expression) {
+				Visit(expression);
+				return builder.ToString();
+			}
+		}
+
+		#endregion
+
+		public static SubQueryExpression Query(TableSelectExpression expression) {
+			return new SubQueryExpression(expression);
 		}
 	}
 }

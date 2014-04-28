@@ -41,6 +41,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Deveel.Data.Expressions\ExpressionTests.cs" />
+    <Compile Include="Deveel.Data.Sql\AssignmentTests.cs" />
+    <Compile Include="Deveel.Data.Sql\DataTypeTests.cs" />
     <Compile Include="Deveel.Data.Sql\ParserTestBase.cs" />
     <Compile Include="Deveel.Data.Sql\SelectTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

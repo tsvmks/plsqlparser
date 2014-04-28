@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Deveel.Data.Expressions;
 using Deveel.Data.Sql.Statements;
+using Deveel.Data.Types;
 
 internal  class PlSqlTokenManager : PlSqlConstants {
   public  System.IO.TextWriter debugStream = Console.Out;

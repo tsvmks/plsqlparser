@@ -7,11 +7,11 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Equals; }
+			get { return ExpressionType.Equal; }
 		}
 
-		protected override object Evaluate(EvaluationContext context) {
-			throw new NotImplementedException();
+		internal override Operator Operator {
+			get { return Operator.Equal; }
 		}
 	}
 }

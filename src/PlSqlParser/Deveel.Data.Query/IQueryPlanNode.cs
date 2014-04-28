@@ -8,9 +8,9 @@ namespace Deveel.Data.Query {
 	public interface IQueryPlanNode {
 		object Evaluate(IQueryContext context);
 
-		IList<string> DiscoverTableNames(IList<string> list);
+		IList<ObjectName> DiscoverTableNames(IList<ObjectName> list);
 
-		IList<string> DiscoverCorrelatedVariables(IList<string> list);
+		IList<ObjectName> DiscoverCorrelatedVariables(IList<ObjectName> list);
 
 		void Explain(StringBuilder output);
 	}

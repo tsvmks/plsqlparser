@@ -38,7 +38,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Deveel.Data.DbSystem\IGroupResolver.cs" />
     <Compile Include="Deveel.Data.DbSystem\IQueryContext.cs" />
+    <Compile Include="Deveel.Data.DbSystem\IVariableResolver.cs" />
+    <Compile Include="Deveel.Data.Expressions\AddExpression.cs" />
     <Compile Include="Deveel.Data.Expressions\BinaryExpression.cs" />
     <Compile Include="Deveel.Data.Expressions\ConditionalExpression.cs" />
     <Compile Include="Deveel.Data.Expressions\ConstantExpression.cs" />
@@ -51,7 +54,9 @@
     <Compile Include="Deveel.Data.Expressions\ExpressionVisitor.cs" />
     <Compile Include="Deveel.Data.Expressions\FunctionCallExpression.cs" />
     <Compile Include="Deveel.Data.Expressions\IExpressionVisitor.cs" />
-    <Compile Include="Deveel.Data.Expressions\Operator.cs" />
+    <Compile Include="Deveel.Data\Number.cs" />
+    <Compile Include="Deveel.Data\NumberState.cs" />
+    <Compile Include="Deveel.Data\Operator.cs" />
     <Compile Include="Deveel.Data.Expressions\SubQueryExpression.cs" />
     <Compile Include="Deveel.Data.Expressions\TableNameExplorer.cs" />
     <Compile Include="Deveel.Data.Expressions\TypeIsExpression.cs" />
@@ -59,6 +64,7 @@
     <Compile Include="Deveel.Data.Expressions\VariableExplorer.cs" />
     <Compile Include="Deveel.Data.Expressions\VariableExpression.cs" />
     <Compile Include="Deveel.Data.Query\IQueryPlanNode.cs" />
+    <Compile Include="Deveel.Data.Query\Planner.cs" />
     <Compile Include="Deveel.Data.Sql.Parser\ParseException.cs" />
     <Compile Include="Deveel.Data.Sql.Parser\ParserUtil.cs" />
     <Compile Include="Deveel.Data.Sql.Parser\PlSql.cs" />
@@ -67,6 +73,7 @@
     <Compile Include="Deveel.Data.Sql.Parser\SimpleCharStream.cs" />
     <Compile Include="Deveel.Data.Sql.Parser\Token.cs" />
     <Compile Include="Deveel.Data.Sql.Parser\TokenMgrError.cs" />
+    <Compile Include="Deveel.Data.Sql.Statements\AssignmentStatement.cs" />
     <Compile Include="Deveel.Data.Sql.Statements\SelectStatement.cs" />
     <Compile Include="Deveel.Data.Sql.Statements\Statement.cs" />
     <Compile Include="Deveel.Data.Sql\ByColumn.cs" />
@@ -76,15 +83,50 @@
     <Compile Include="Deveel.Data.Sql\FunctionArgument.cs" />
     <Compile Include="Deveel.Data.Sql\JoiningSet.cs" />
     <Compile Include="Deveel.Data.Sql\JoinType.cs" />
+    <Compile Include="Deveel.Data.Sql\ObjectName.cs" />
     <Compile Include="Deveel.Data.Sql\SelectColumn.cs" />
     <Compile Include="Deveel.Data.Sql\SelectIntoClause.cs" />
     <Compile Include="Deveel.Data.Sql\SqlParser.cs" />
     <Compile Include="Deveel.Data.Sql\TableSelectExpression.cs" />
+    <Compile Include="Deveel.Data.Types\BinaryType.cs" />
+    <Compile Include="Deveel.Data.Types\BooleanType.cs" />
+    <Compile Include="Deveel.Data.Types\ColumnType.cs" />
+    <Compile Include="Deveel.Data.Types\DateType.cs" />
+    <Compile Include="Deveel.Data.Types\ITypeResolver.cs" />
+    <Compile Include="Deveel.Data.Types\NullType.cs" />
+    <Compile Include="Deveel.Data.Types\NumericType.cs" />
+    <Compile Include="Deveel.Data.Types\QueryType.cs" />
+    <Compile Include="Deveel.Data.Types\RowType.cs" />
+    <Compile Include="Deveel.Data.Types\StringType.cs" />
+    <Compile Include="Deveel.Data.Types\DataType.cs" />
+    <Compile Include="Deveel.Data.Types\PrimitiveTypes.cs" />
+    <Compile Include="Deveel.Data.Types\SqlType.cs" />
+    <Compile Include="Deveel.Data\DataObject.cs" />
+    <Compile Include="Deveel.Data\OperatorSubType.cs" />
+    <Compile Include="Deveel.Data\PatternSearch.cs" />
+    <Compile Include="Deveel.Data\VariableBind.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\BigDecimal.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\BigInteger.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\BitLevel.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\CharHelper.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\Conversion.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\Division.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\Elementary.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\Logical.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\MathContext.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\Multiplication.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\Primality.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\RoundingMode.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\Utils.cs" />
+    <Compile Include="Deveel.Math\src\Deveel.Math\Messages.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <None Include="Deveel.Data.Sql.Parser\PlSql.csc" />
+    <None Include="PlSqlParser.licenseheader" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Deveel.Math\src\Deveel.Math\Messages.resx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
