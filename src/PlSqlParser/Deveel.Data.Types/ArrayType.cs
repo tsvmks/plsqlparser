@@ -15,21 +15,10 @@
 
 using System;
 
-using Deveel.Data.DbSystem;
-
-namespace Deveel.Data.Expressions {
-	[Serializable]
-	public sealed class SubsetExpression : UnaryExpression {
-		public SubsetExpression(Expression child)
-			: base(child) {
-		}
-
-		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Subset; }
-		}
-
-		internal override DataObject Evaluate(DataObject obj, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
-			return Operand.Evaluate(group, resolver, context);
+namespace Deveel.Data.Types {
+	public sealed class ArrayType : DataType {
+		public ArrayType()
+			: base("ARRAY", SqlType.Array) {
 		}
 	}
 }

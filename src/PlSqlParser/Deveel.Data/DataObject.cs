@@ -14,13 +14,15 @@
 //    limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 
+using Deveel.Data.Expressions;
 using Deveel.Data.Types;
 
 namespace Deveel.Data {
 	[Serializable]
-	public sealed class DataObject {
+	public sealed class DataObject : IComparable<DataObject>, IComparable {
 		public DataObject(DataType dataType, object value) {
 			if (dataType == null)
 				throw new ArgumentNullException("dataType");
@@ -42,8 +44,59 @@ namespace Deveel.Data {
 		public static readonly DataObject BooleanNull = new DataObject(PrimitiveTypes.Boolean(), null);
 		public static readonly DataObject Null = new DataObject(PrimitiveTypes.Null(), null);
 
+		public static DataObject Array(IEnumerable<Expression> expressions) {
+			return new DataObject(new ArrayType(), expressions);
+		}
+
+		public bool IsComparableTo(DataObject obj) {
+			return DataType.IsComparable(obj.DataType);
+		}
+
+		int IComparable.CompareTo(object obj) {
+			if (!(obj is DataObject))
+				throw new ArgumentException();
+
+			return CompareTo((DataObject) obj);
+		}
+
+		public int CompareTo(DataObject tob) {
+			// If this is null
+			if (IsNull) {
+				// and value is null return 0 return less
+				if (tob.IsNull)
+					return 0;
+				return -1;
+			}
+
+			// If this is not null and value is null return +1
+			if (tob.IsNull)
+				return 1;
+
+			// otherwise both are non null so compare normally.
+			return CompareToNoNulls(tob);
+		}
+
+		public int CompareToNoNulls(DataObject tob) {
+			DataType ttype = DataType;
+			// Strings must be handled as a special case.
+			if (ttype is StringType) {
+				// We must determine the locale to compare against and use that.
+				var stype = (StringType)ttype;
+
+				// If there is no locale defined for this type we use the locale in the
+				// given type.
+				if (stype.Locale == null) {
+					ttype = tob.DataType;
+				}
+			}
+
+			return ttype.Compare(this, tob);
+		}
+
 		public bool? ToBoolean() {
-			throw new NotImplementedException();
+			if (DataType is BooleanType)
+				return (bool?)Value;
+			return null;
 		}
 
 		public DataObject Add(DataObject value) {
@@ -67,7 +120,7 @@ namespace Deveel.Data {
 			throw new InvalidOperationException();
 		}
 
-		private Number ToNumber() {
+		public Number ToNumber() {
 			if (!(DataType is NumericType))
 				return null;
 
@@ -119,7 +172,12 @@ namespace Deveel.Data {
 		}
 
 		public DataObject IsEqual(DataObject value) {
-			throw new NotImplementedException();
+			// Check the types are comparable
+			if (IsComparableTo(value) && !IsNull && !value.IsNull) {
+				return Boolean(CompareToNoNulls(value) == 0);
+			}
+			// Not comparable types so return null
+			return BooleanNull;
 		}
 
 		public DataObject SoundsLike(DataObject value) {
@@ -135,11 +193,22 @@ namespace Deveel.Data {
 		}
 
 		public DataObject Is(DataObject value) {
-			throw new NotImplementedException();
+			if (IsNull && value.IsNull)
+				return BooleanTrue;
+			if (IsComparableTo(value))
+				return Boolean(CompareTo(value) == 0);
+
+			// Not comparable types so return false
+			return BooleanFalse;
 		}
 
 		public DataObject Not() {
-			throw new NotImplementedException();
+			// If type is null
+			if (IsNull)
+				return this;
+
+			bool? b = ToBoolean();
+			return b.HasValue ? Boolean(!b.Value) : BooleanNull;
 		}
 
 		public DataObject LessEquals(DataObject value) {
@@ -163,11 +232,16 @@ namespace Deveel.Data {
 		}
 
 		public DataObject IsNotEqual(DataObject value) {
-			throw new NotImplementedException();
+			// Check the types are comparable
+			if (IsComparableTo(value) && !IsNull && !value.IsNull) {
+				return Boolean(CompareToNoNulls(value) != 0);
+			}
+			// Not comparable types so return null
+			return BooleanNull;
 		}
 
 		public DataObject CastTo(DataType dataType) {
-			throw new NotImplementedException();
+			return DataType.CastValueTo(this, dataType);
 		}
 
 		public DataObject Subtract(DataObject value) {

@@ -34,6 +34,7 @@ namespace Deveel.Data.Expressions {
 				case ExpressionType.GreaterOrEqual:
 				case ExpressionType.Equal:
 				case ExpressionType.NotEqual:
+				case ExpressionType.Like:
 					return VisitBinary((BinaryExpression) exp);
 				case ExpressionType.Is:
 					return VisitTypeIs((TypeIsExpression) exp);
@@ -54,9 +55,9 @@ namespace Deveel.Data.Expressions {
 			}
 		}
 
-		private SubsetExpression VisitSubset(SubsetExpression expression) {
-			var child = Visit(expression.Child);
-			if (child != expression.Child)
+		protected virtual SubsetExpression VisitSubset(SubsetExpression expression) {
+			var child = Visit(expression.Operand);
+			if (child != expression.Operand)
 				return new SubsetExpression(child);
 
 			return expression;

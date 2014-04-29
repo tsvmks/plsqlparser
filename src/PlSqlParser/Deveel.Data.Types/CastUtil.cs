@@ -14,22 +14,26 @@
 //    limitations under the License.
 
 using System;
+using System.Text;
 
-using Deveel.Data.DbSystem;
-
-namespace Deveel.Data.Expressions {
-	[Serializable]
-	public sealed class SubsetExpression : UnaryExpression {
-		public SubsetExpression(Expression child)
-			: base(child) {
-		}
-
-		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Subset; }
-		}
-
-		internal override DataObject Evaluate(DataObject obj, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
-			return Operand.Evaluate(group, resolver, context);
+namespace Deveel.Data.Types {
+	static class CastUtil {
+		public static string PaddedString(String str, int size) {
+			if (size == -1) {
+				return str;
+			}
+			int dif = size - str.Length;
+			if (dif > 0) {
+				var buf = new StringBuilder(str);
+				for (int n = 0; n < dif; ++n) {
+					buf.Append(' ');
+				}
+				return buf.ToString();
+			}
+			if (dif < 0) {
+				return str.Substring(0, size);
+			}
+			return str;
 		}
 	}
 }

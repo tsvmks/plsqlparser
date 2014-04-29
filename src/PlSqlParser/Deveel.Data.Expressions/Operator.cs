@@ -15,21 +15,21 @@
 
 using System;
 
-using Deveel.Data.DbSystem;
-
 namespace Deveel.Data.Expressions {
-	[Serializable]
-	public sealed class SubsetExpression : UnaryExpression {
-		public SubsetExpression(Expression child)
-			: base(child) {
-		}
+	[Flags]
+	public enum Operator {
+		// Multiplicative
+		Add,
+		Subtract,
+		Multiply,
+		Divide,
+		Modulo,
 
-		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Subset; }
-		}
+		// Logical
+		Equal,
+		NotEqual,
+		Like,
+		NotLike,
 
-		internal override DataObject Evaluate(DataObject obj, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
-			return Operand.Evaluate(group, resolver, context);
-		}
 	}
 }

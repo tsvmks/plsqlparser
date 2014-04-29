@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Text;
 
+using Deveel.Data.DbSystem;
+
 namespace Deveel.Data.Expressions {
 	public abstract class BinaryExpression : Expression {
 		public Expression First { get; private set; }
@@ -12,8 +14,10 @@ namespace Deveel.Data.Expressions {
 			Second = second;
 		}
 
-		internal virtual Operator Operator {
-			get { return null; }
-		}
+		internal abstract DataObject Evaluate(DataObject ob1,
+			DataObject ob2,
+			IGroupResolver group,
+			IVariableResolver resolver,
+			IQueryContext context);
 	}
 }

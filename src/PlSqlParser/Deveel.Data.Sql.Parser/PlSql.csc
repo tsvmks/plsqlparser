@@ -881,8 +881,8 @@ Expression PlSqlBetweenClause(Expression exp):
   bool isNot=false;}
 {
     ["NOT" { isNot = true; } ] "BETWEEN" min = PlSqlSimpleExpression() "AND" max = PlSqlSimpleExpression()
-	{ exp = Expression.Between(exp, min, max); 
-	 if (isNot) exp = Expression.Not(exp); 
+	{ if (isNot) exp = Expression.NotBetween(exp, min, max); 
+	 else exp = Expression.Between(exp, min, max); 
 	 return exp; }
 }
 
@@ -962,7 +962,7 @@ Expression PlSqlPrimaryExpression():
 {
  (   t = <S_NUMBER> { exp = Expression.Constant(ParserUtil.Number(t.image));}
   | t = <S_CHAR_LITERAL> { exp = Expression.Constant(ParserUtil.Unquote(t.image)); }
-  | "NULL" { exp = Expression.Constant(null); }
+  | "NULL" { exp = Expression.Constant(DataObject.Null); }
   | exp = SQLCaseExpression()
   | "(" (LOOKAHEAD(3) selectExp = Select() { exp = Expression.Query(selectExp); } | 
        exp = PlSqlExpression() { exp = Expression.Subset(exp); } ) ")"
@@ -1399,7 +1399,7 @@ Expression SQLRelationalExpression():
    ( exp = SQLRelationalOperatorExpression(exp) |  
      LOOKAHEAD(2) (SQLInClause()) |  
 	 LOOKAHEAD(2) (SQLBetweenClause()) |  
-	 LOOKAHEAD(2) (SQLLikeClause()) |  
+	 LOOKAHEAD(2) (exp = SQLLikeClause(exp)) |  
 	 IsNullClause(null)
    )?
    )
@@ -1445,10 +1445,13 @@ void SQLBetweenClause():
     ["NOT"] "BETWEEN" SQLSimpleExpression() "AND" SQLSimpleExpression()
 }
 
-void SQLLikeClause():
-{}
+Expression SQLLikeClause(Expression exp):
+{ Expression likeExp; bool isNot = false; Expression escapeExp = null; }
 {
-    ["NOT"] "LIKE" SQLSimpleExpression() ["ESCAPE" SQLSimpleExpression()]
+    ["NOT" { isNot = true; } ] "LIKE" likeExp = SQLSimpleExpression() [ "ESCAPE" escapeExp = SQLSimpleExpression()]
+	{ exp = Expression.Like(exp, likeExp, escapeExp); 
+	if (isNot) exp = Expression.Not(exp); 
+	return exp; }
 }
 
 Expression SQLSimpleExpression():

@@ -179,6 +179,15 @@ namespace Deveel.Data {
 			return bigDecimal;
 		}
 
+		public bool ToBoolean() {
+			int value = ToInt16();
+			if (value == 0)
+				return false;
+			if (value == 1)
+				return true;
+			throw new InvalidCastException();
+		}
+
 		public int CompareTo(object obj) {
 			return CompareTo((Number)obj);
 		}
@@ -472,12 +481,7 @@ namespace Deveel.Data {
 		}
 
 		bool IConvertible.ToBoolean(IFormatProvider provider) {
-			int value = ToInt16();
-			if (value == 0)
-				return false;
-			if (value == 1)
-				return true;
-			throw new InvalidCastException();
+			return ToBoolean();
 		}
 
 		char IConvertible.ToChar(IFormatProvider provider) {

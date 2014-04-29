@@ -19,17 +19,17 @@ using Deveel.Data.DbSystem;
 
 namespace Deveel.Data.Expressions {
 	[Serializable]
-	public sealed class SubsetExpression : UnaryExpression {
-		public SubsetExpression(Expression child)
-			: base(child) {
+	public sealed class NotEqualExpression : BinaryExpression {
+		public NotEqualExpression(Expression first, Expression second) 
+			: base(first, second) {
 		}
 
 		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Subset; }
+			get { return ExpressionType.NotEqual; }
 		}
 
-		internal override DataObject Evaluate(DataObject obj, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
-			return Operand.Evaluate(group, resolver, context);
+		internal override DataObject Evaluate(DataObject ob1, DataObject ob2, IGroupResolver @group, IVariableResolver resolver, IQueryContext context) {
+			return ob1.IsNotEqual(ob2);
 		}
 	}
 }

@@ -28,13 +28,28 @@ namespace Deveel.Data.Expressions {
 			private IVariableResolver resolver;
 			private IQueryContext context;
 
+			private delegate DataObject BinaryExpressionEvaluate(
+				DataObject a,
+				DataObject b,
+				IGroupResolver group,
+				IVariableResolver resolver,
+				IQueryContext context);
+
+			private delegate DataObject UnaryExpressionEvaluate(
+				DataObject obj,
+				IGroupResolver group,
+				IVariableResolver resolver,
+				IQueryContext context);
+
 			public Evaluator() {
 				elements = new List<object>();
 			}
 
 			private object ElementToObject(int index) {
 				object ob = elements[index];
-				if (ob is DataObject || ob is Operator) {
+				if (ob is DataObject || 
+					ob is BinaryExpressionEvaluate ||
+					ob is UnaryExpressionEvaluate) {
 					return ob;
 				}
 
@@ -75,11 +90,17 @@ if (ob is RoutineInvoke) {
 				int elementCount = elements.Count;
 				if (elementCount == 1)
 					return (DataObject)ElementToObject(0);
+				if (elementCount == 2) {
+					//TODO: experimenting unaries...
+					var obj = (DataObject) ElementToObject(0);
+					var op = (UnaryExpressionEvaluate) elements[1];
+					return op(obj, group, resolver, context);
+				}
 				if (elementCount == 3) {
 					var o1 = (DataObject)ElementToObject(0);
 					var o2 = (DataObject)ElementToObject(1);
-					var op = (Operator)elements[2];
-					return op.Evaluate(o1, o2, group, resolver, context);
+					var op = (BinaryExpressionEvaluate)elements[2];
+					return op(o1, o2, group, resolver, context);
 				}
 
 				if (evalStack == null)
@@ -87,13 +108,13 @@ if (ob is RoutineInvoke) {
 
 				for (int n = 0; n < elementCount; ++n) {
 					object val = ElementToObject(n);
-					if (val is Operator) {
-						Operator op = (Operator)val;
+					if (val is BinaryExpressionEvaluate) {
+						var op = (BinaryExpressionEvaluate)val;
 
-						DataObject v2 = (DataObject)evalStack.Pop();
-						DataObject v1 = (DataObject)evalStack.Pop();
+						var v2 = (DataObject)evalStack.Pop();
+						var v1 = (DataObject)evalStack.Pop();
 
-						evalStack.Push(op.Evaluate(v1, v2, group, resolver, context));
+						evalStack.Push(op(v1, v2, group, resolver, context));
 					} else {
 						evalStack.Push(val);
 					}
@@ -121,7 +142,7 @@ if (ob is RoutineInvoke) {
 
 				elements.Add(results[0]);
 				elements.Add(results[1]);
-				elements.Add(expression.Operator);
+				elements.Add(new BinaryExpressionEvaluate(expression.Evaluate));
 				return expression;
 			}
 
@@ -141,8 +162,8 @@ if (ob is RoutineInvoke) {
 			}
 
 			protected override Expression VisitUnary(UnaryExpression expression) {
-				elements.Add(expression.Operand);
-				elements.Add(expression.Operator);
+				elements.Add(expression.Operand.Evaluate(group, resolver, context));
+				elements.Add(new UnaryExpressionEvaluate(expression.Evaluate));
 				return expression;
 			}
 

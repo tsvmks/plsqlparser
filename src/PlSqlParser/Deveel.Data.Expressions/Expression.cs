@@ -60,11 +60,11 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public static Expression And(Expression first, Expression second) {
-			return null;
+			return new AndExpression(first, second);
 		}
 
 		public static Expression Not(Expression expression) {
-			return null;
+			return new NotExpression(expression);
 		}
 
 		public static Expression Relational(Expression first, ExpressionType op, Expression second) {
@@ -75,15 +75,34 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public static Expression In(Expression expression, IEnumerable<Expression> group) {
+			return In(expression, DataObject.Array(group));
+		}
+
+		public static Expression In(Expression expression, DataObject array) {
+			if (!(array.DataType is ArrayType))
+				throw new ArgumentException();
+
 			return null;
 		}
 
 		public static Expression Between(Expression expression, Expression min, Expression max) {
+			return Or(Greater(expression, min), Smaller(expression, max));
+		}
+
+		public static Expression NotBetween(Expression expression, Expression min, Expression max) {
+			return null;
+		}
+
+		public static Expression Greater(Expression first, Expression second) {
+			return null;
+		}
+
+		public static Expression Smaller(Expression first, Expression second) {
 			return null;
 		}
 
 		public static Expression Like(Expression expression, Expression searchExpression, Expression escape) {
-			return null;
+			return new LikeExpression(expression, searchExpression, escape);
 		}
 
 		public static BinaryExpression IsNull(Expression expression) {
@@ -101,6 +120,8 @@ namespace Deveel.Data.Expressions {
 		public static BinaryExpression Binary(Expression first, ExpressionType type, Expression second) {
 			if (type == ExpressionType.Equal)
 				return Equal(first, second);
+			if (type == ExpressionType.NotEqual)
+				return NotEqual(first, second);
 
 			if (type == ExpressionType.Add)
 				return Add(first, second);
@@ -120,6 +141,10 @@ namespace Deveel.Data.Expressions {
 
 		public static EqualExpression Equal(Expression first, Expression second) {
 			return new EqualExpression(first, second);
+		}
+
+		public static NotEqualExpression NotEqual(Expression first, Expression second) {
+			return new NotEqualExpression(first, second);
 		}
 
 		public static Expression Subset(Expression expression) {

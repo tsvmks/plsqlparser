@@ -1,5 +1,7 @@
 ﻿using System;
 
+using Deveel.Data.DbSystem;
+
 namespace Deveel.Data.Expressions {
 	public sealed class EqualExpression : BinaryExpression {
 		public EqualExpression(Expression first, Expression second) 
@@ -10,8 +12,8 @@ namespace Deveel.Data.Expressions {
 			get { return ExpressionType.Equal; }
 		}
 
-		internal override Operator Operator {
-			get { return Operator.Equal; }
+		internal override DataObject Evaluate(DataObject ob1, DataObject ob2, IGroupResolver @group, IVariableResolver resolver, IQueryContext context) {
+			return ob1.IsEqual(ob2);
 		}
 	}
 }

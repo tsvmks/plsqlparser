@@ -15,6 +15,8 @@
 
 using System;
 
+using Deveel.Data.DbSystem;
+
 namespace Deveel.Data.Expressions {
 	[Serializable]
 	public sealed class AddExpression : BinaryExpression {
@@ -26,8 +28,8 @@ namespace Deveel.Data.Expressions {
 			get { return ExpressionType.Add; }
 		}
 
-		internal override Operator Operator {
-			get { return Operator.Add; }
+		internal override DataObject Evaluate(DataObject ob1, DataObject ob2, IGroupResolver @group, IVariableResolver resolver, IQueryContext context) {
+			return ob1.Add(ob2);
 		}
 	}
 }

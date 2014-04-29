@@ -42,5 +42,35 @@ namespace Deveel.Data.Expressions {
 			Assert.IsTrue(result.DataType.IsPrimitive);
 			Assert.AreEqual("326.23", result.ToString());
 		}
+
+		[Test]
+		public void NumericNotEqual() {
+			var exp = SqlParser.SqlExpression("NOT ((25 + 11) <> 58)");
+			Assert.IsNotNull(exp);
+			Assert.IsInstanceOf<NotExpression>(exp);
+
+			var result = exp.Evaluate();
+			Assert.IsNotNull(result);
+			Assert.IsTrue(result.DataType.IsPrimitive);
+
+			var boolResult = result.ToBoolean();
+			Assert.IsNotNull(boolResult);
+			Assert.IsFalse(boolResult.Value);
+		}
+
+		[Test]
+		public void StringLike() {
+			var exp = SqlParser.SqlExpression("'Antonello' LIKE '*ntonello' ESCAPE '*'");
+			Assert.IsNotNull(exp);
+			Assert.IsInstanceOf<LikeExpression>(exp);
+
+			var result = exp.Evaluate();
+			Assert.IsNotNull(result);
+			Assert.IsTrue(result.DataType.IsPrimitive);
+
+			var boolResult = result.ToBoolean();
+			Assert.IsNotNull(boolResult);
+			Assert.IsTrue(boolResult.Value);
+		}
 	}
 }

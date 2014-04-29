@@ -14,22 +14,32 @@
 //    limitations under the License.
 
 using System;
+using System.IO;
 
-using Deveel.Data.DbSystem;
-
-namespace Deveel.Data.Expressions {
+namespace Deveel.Data {
 	[Serializable]
-	public sealed class SubsetExpression : UnaryExpression {
-		public SubsetExpression(Expression child)
-			: base(child) {
+	public sealed class BinaryObject : IBinaryObject {
+		private readonly byte[] buffer;
+
+		public BinaryObject(byte[] buffer, int offset, int length) {
+			this.buffer = new byte[length];
+			Array.Copy(buffer, offset, this.buffer, 0, length);
 		}
 
-		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Subset; }
+		public BinaryObject(byte[] buffer)
+			: this(buffer, 0, buffer.Length) {
 		}
 
-		internal override DataObject Evaluate(DataObject obj, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
-			return Operand.Evaluate(group, resolver, context);
+		long IBinaryObject.Length {
+			get { return (long) Length; }
+		}
+
+		public int Length {
+			get { return buffer.Length; }
+		}
+
+		public Stream GetInputStream() {
+			return new MemoryStream(buffer, false);
 		}
 	}
 }

@@ -23,6 +23,43 @@ namespace Deveel.Data.Types {
 			AssertDateType(sqlType);
 		}
 
+		public static readonly string[] DateFormatSql = new[] {
+			"yyyy-MM-dd",
+			"yyyy MM dd"
+		};
+
+		public static readonly string[] TimeFormatSql = new[] {
+			"HH:mm:ss.fff z",
+			"HH:mm:ss.fff zz",
+			"HH:mm:ss.fff zzz",
+			"HH:mm:ss.fff",
+			"HH:mm:ss z",
+			"HH:mm:ss zz",
+			"HH:mm:ss zzz",
+			"HH:mm:ss"
+		};
+
+		public static readonly string[] TsFormatSql = new[] {
+			"yyyy-MM-dd HH:mm:ss.fff",
+			"yyyy-MM-dd HH:mm:ss.fff z",
+			"yyyy-MM-dd HH:mm:ss.fff zz",
+			"yyyy-MM-dd HH:mm:ss.fff zzz",
+			"yyyy-MM-dd HH:mm:ss",
+			"yyyy-MM-dd HH:mm:ss z",
+			"yyyy-MM-dd HH:mm:ss zz",
+			"yyyy-MM-dd HH:mm:ss zzz",
+
+			"yyyy-MM-ddTHH:mm:ss.fff",
+			"yyyy-MM-ddTHH:mm:ss.fff z",
+			"yyyy-MM-ddTHH:mm:ss.fff zz",
+			"yyyy-MM-ddTHH:mm:ss.fff zzz",
+			"yyyy-MM-ddTHH:mm:ss",
+			"yyyy-MM-ddTHH:mm:ss z",
+			"yyyy-MM-ddTHH:mm:ss zz",
+			"yyyy-MM-ddTHH:mm:ss zzz",
+		};
+
+
 		private static void AssertDateType(SqlType sqlType) {
 			if (sqlType != SqlType.Date &&
 				sqlType != SqlType.Time &&

@@ -1,5 +1,7 @@
 ﻿using System;
 
+using Deveel.Data.DbSystem;
+
 namespace Deveel.Data.Expressions {
 	public abstract class UnaryExpression : Expression {
 		protected UnaryExpression(Expression operand) {
@@ -8,8 +10,6 @@ namespace Deveel.Data.Expressions {
 
 		public Expression Operand { get; private set; }
 
-		internal Operator Operator {
-			get { return null; }
-		}
+		internal abstract DataObject Evaluate(DataObject obj, IGroupResolver group, IVariableResolver resolver, IQueryContext context);
 	}
 }

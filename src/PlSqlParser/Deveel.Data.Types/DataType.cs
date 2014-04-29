@@ -50,7 +50,7 @@ namespace Deveel.Data.Types {
 			get { return PrimitiveTypes.IsPrimitive(SqlType); }
 		}
 
-		protected virtual bool IsComparable(DataType type) {
+		public virtual bool IsComparable(DataType type) {
 			return SqlType.Equals(type.SqlType);
 		}
 
@@ -79,6 +79,25 @@ namespace Deveel.Data.Types {
 
 		public virtual DataType Wider(DataType otherType) {
 			return this;
+		}
+
+		public DataObject CastValueTo(DataObject value, DataType destType) {
+			if (value.IsNull)
+				return new DataObject(destType, null);
+
+			object result;
+
+			try {
+				result = CastObjectTo(value.Value, destType);
+			} catch (InvalidCastException e) {
+				throw new InvalidCastException(String.Format("Cannot cast an object from {0} to {1}", ToString(), destType), e);
+			}
+			
+			return new DataObject(destType, result);
+		}
+
+		protected virtual object CastObjectTo(object value, DataType destType) {
+			throw new InvalidCastException();
 		}
 	}
 }

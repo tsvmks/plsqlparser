@@ -16,6 +16,8 @@
 using System;
 using System.Text;
 
+using Deveel.Math;
+
 namespace Deveel.Data.Types {
 	[Serializable]
 	public sealed class NumericType : DataType {
@@ -116,6 +118,77 @@ namespace Deveel.Data.Types {
 			// NOTREACHED - can't get here, the last three if statements cover
 			// all possibilities.
 			throw new ApplicationException("Widest type error.");
+		}
+
+		protected override int CompareValues(object x, object y) {
+			var n1 = (Number)x;
+			Number n2;
+
+			if (y is Number) {
+				n2 = (Number)y;
+			} else {
+				n2 = (bool)y ? Number.One : Number.Zero;
+			}
+
+			return n1.CompareTo(n2);
+		}
+
+		private static DateTime ToDate(long time) {
+			return new DateTime(time);
+		}
+
+		protected override object CastObjectTo(object value, DataType destType) {
+			var n = (Number) value;
+
+			var sqlType = destType.SqlType;
+			switch (sqlType) {
+				case (SqlType.Bit):
+				case (SqlType.Boolean):
+					return n.ToBoolean();
+				case (SqlType.TinyInt):
+				case (SqlType.SmallInt):
+				case (SqlType.Integer):
+					return (Number)n.ToInt32();
+				case (SqlType.BigInt):
+					return (Number)n.ToInt64();
+				case (SqlType.Float):
+				case (SqlType.Real):
+				case (SqlType.Double):
+					double d = n.ToDouble();
+					NumberState state = NumberState.None;
+					if (Double.IsNaN(d))
+						state = NumberState.NotANumber;
+					else if (Double.IsPositiveInfinity(d))
+						state = NumberState.PositiveInfinity;
+					else if (Double.IsNegativeInfinity(d))
+						state = NumberState.NegativeInfinity;
+					return new Number(state, new BigDecimal(d));
+				case (SqlType.Numeric):
+				// fall through
+				case (SqlType.Decimal):
+					return Number.Parse(n.ToString());
+				case (SqlType.Char):
+					return new StringObject(CastUtil.PaddedString(n.ToString(), ((StringType) destType).MaxSize));
+				case (SqlType.VarChar):
+				case (SqlType.LongVarChar):
+					return new StringObject(n.ToString());
+				case (SqlType.Date):
+				case (SqlType.Time):
+				case (SqlType.TimeStamp):
+					return ToDate(n.ToInt64());
+				case (SqlType.Blob):
+				// fall through
+				case (SqlType.Binary):
+				// fall through
+				case (SqlType.VarBinary):
+				// fall through
+				case (SqlType.LongVarBinary):
+					return new BinaryObject(n.ToByteArray());
+				case (SqlType.Null):
+					return null;
+				default:
+					throw new InvalidCastException();
+			}
 		}
 
 		public override string ToString() {
