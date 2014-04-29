@@ -22,7 +22,7 @@ using Deveel.Data.Expressions;
 
 namespace Deveel.Data.Sql {
 	[DebuggerDisplay("{ToString(), nq}")]
-	public sealed class TableSelectExpression {
+	public sealed class TableSelectExpression : IPreparable {
 		private Expression whereClause;
 		private bool whereSet;
 
@@ -66,6 +66,44 @@ namespace Deveel.Data.Sql {
 			NextComposite = expression;
 			CompositeFunction = composite;
 			IsCompositeAll = isAll;
+		}
+
+		object IPreparable.Prepare(IExpressionPreparer preparer) {
+			return Prepare(preparer);
+		}
+
+		public TableSelectExpression Prepare(IExpressionPreparer preparer) {
+			var selectExp = new TableSelectExpression {
+				GroupMax = GroupMax,
+				Distinct = Distinct,
+				CompositeFunction = CompositeFunction,
+				IsCompositeAll = IsCompositeAll
+			};
+
+			foreach (var column in Columns) {
+				selectExp.Columns.Add(column.Prepare(preparer));
+			}
+
+			if (From != null)
+				selectExp.From = From.Prepare(preparer);
+
+			if (Into != null)
+				selectExp.Into = Into.Prepare(preparer);
+
+			if (whereClause != null)
+				selectExp.Where = whereClause.Prepare(preparer);
+
+			foreach (var column in GroupBy) {
+				selectExp.GroupBy.Add(column.Prepare(preparer));
+			}
+
+			if (Having != null)
+				selectExp.Having = Having.Prepare(preparer);
+
+			if (NextComposite != null)
+				selectExp.NextComposite = NextComposite.Prepare(preparer);
+
+			return selectExp;
 		}
 
 		internal void DumpSqlTo(StringBuilder builder) {

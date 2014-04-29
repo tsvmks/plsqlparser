@@ -100,10 +100,10 @@ namespace Deveel.Data {
 
 				var destType = st1.Wider(st2);
 
-				var sb = new StringBuilder();
-				sb.Append(ToStringValue());
-				sb.Append(value.ToStringValue());
-				return new DataObject(destType, sb.ToString());
+				var obj1 = (IStringObject) Value;
+				var obj2 = (IStringObject) value.Value;
+
+				return new DataObject(destType, obj1.Concat(obj2));
 			}
 
 			// Return null if LHS or RHS are not strings
@@ -151,7 +151,15 @@ namespace Deveel.Data {
 		}
 
 		public DataObject Multiply(DataObject value) {
-			throw new NotImplementedException();
+			Number v1 = ToNumber();
+			Number v2 = value.ToNumber();
+			DataType resultType = DataType.Wider(value.DataType);
+
+			if (v1 == null || v2 == null) {
+				return new DataObject(resultType, null);
+			}
+
+			return new DataObject(resultType, v1.Multiply(v2));
 		}
 
 		public DataObject IsNotEqual(DataObject value) {

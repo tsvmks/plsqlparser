@@ -7,5 +7,9 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public Expression Operand { get; private set; }
+
+		internal Operator Operator {
+			get { return null; }
+		}
 	}
 }

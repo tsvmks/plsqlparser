@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text;
 
 using Deveel.Data.Sql;
+using Deveel.Data.Types;
 
 namespace Deveel.Data.Expressions {
 	[DebuggerDisplay("{ToString()}")]
@@ -93,12 +94,18 @@ namespace Deveel.Data.Expressions {
 			return new AddExpression(first, second);
 		}
 
+		public static MultiplyExpression Multiply(Expression first, Expression second) {
+			return new MultiplyExpression(first, second);
+		}
+
 		public static BinaryExpression Binary(Expression first, ExpressionType type, Expression second) {
 			if (type == ExpressionType.Equal)
 				return Equal(first, second);
 
 			if (type == ExpressionType.Add)
 				return Add(first, second);
+			if (type == ExpressionType.Multiply)
+				return Multiply(first, second);
 
 			return null;
 		}
@@ -111,16 +118,12 @@ namespace Deveel.Data.Expressions {
 			return new ConstantExpression(value);
 		}
 
-		public static Expression Subquery(TableSelectExpression selectExpression) {
-			return null;
-		}
-
 		public static EqualExpression Equal(Expression first, Expression second) {
 			return new EqualExpression(first, second);
 		}
 
 		public static Expression Subset(Expression expression) {
-			return null;
+			return new SubsetExpression(expression);
 		}
 
 		public static Expression Variable(string name) {
@@ -156,17 +159,17 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public static Expression Conditional(Expression test, Expression ifTrue, Expression ifFalse) {
-			return null;
+			return new ConditionalExpression(test, ifTrue, ifFalse);
 		}
 
 
 		public static Expression Conditional(Expression test, Expression ifTrue) {
-			return null;
+			return Conditional(test, ifTrue, null);
 		}
 
 		#endregion
 
-		public static TypeIsExpression Is(Expression expression, Type type) {
+		public static TypeIsExpression Is(Expression expression, DataType type) {
 			return new TypeIsExpression(expression, type);
 		}
 

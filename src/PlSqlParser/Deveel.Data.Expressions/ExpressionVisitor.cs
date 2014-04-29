@@ -47,9 +47,19 @@ namespace Deveel.Data.Expressions {
 					return VisitMethodCall((FunctionCallExpression) exp);
 				case ExpressionType.Query:
 					return VisitSubQuery((SubQueryExpression) exp);
+				case ExpressionType.Subset:
+					return VisitSubset((SubsetExpression) exp);
 				default:
 					throw new Exception(string.Format("Unhandled expression type: '{0}'", exp.ExpressionType));
 			}
+		}
+
+		private SubsetExpression VisitSubset(SubsetExpression expression) {
+			var child = Visit(expression.Child);
+			if (child != expression.Child)
+				return new SubsetExpression(child);
+
+			return expression;
 		}
 
 		protected virtual Expression VisitSubQuery(SubQueryExpression expression) {

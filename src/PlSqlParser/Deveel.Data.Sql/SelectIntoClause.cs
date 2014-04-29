@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using Deveel.Data.Expressions;
+
 namespace Deveel.Data.Sql {
 	public sealed class SelectIntoClause {
 		public SelectIntoClause() {
@@ -41,6 +43,10 @@ namespace Deveel.Data.Sql {
 				throw new ArgumentException("Unable to set the object as target of an INTO clause.");
 			
 			elements.Add(value);
+		}
+
+		public SelectIntoClause Prepare(IExpressionPreparer preparer) {
+			throw new NotImplementedException();
 		}
 	}
 }

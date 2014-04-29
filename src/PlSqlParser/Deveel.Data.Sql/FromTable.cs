@@ -1,7 +1,10 @@
 ﻿using System;
 
+using Deveel.Data.Expressions;
+
 namespace Deveel.Data.Sql {
-	public sealed class FromTable {
+	[Serializable]
+	public sealed class FromTable : IPreparable {
 		public FromTable(ObjectName tableName, ObjectName tableAlias) {
 			Name = tableName;
 			Alias = tableAlias;
@@ -27,6 +30,9 @@ namespace Deveel.Data.Sql {
 			IsSubQueryTable = true;
 		}
 
+		private FromTable() {
+		}
+
 		public ObjectName Name { get; private set; }
 
 		public ObjectName Alias { get; private set; }
@@ -36,5 +42,23 @@ namespace Deveel.Data.Sql {
 		public bool IsSubQueryTable { get; private set; }
 
 		public TableSelectExpression SubSelect { get; private set; }
+
+		public FromTable Prepare(IExpressionPreparer preparer) {
+			var fromTable = new FromTable {
+				Name = Name, 
+				Alias = 
+				Alias, 
+				UniqueKey = UniqueKey, 
+				IsSubQueryTable = IsSubQueryTable
+			};
+			if (SubSelect != null)
+				fromTable.SubSelect = SubSelect.Prepare(preparer);
+
+			return fromTable;
+		}
+
+		object IPreparable.Prepare(IExpressionPreparer preparer) {
+			return Prepare(preparer);
+		}
 	}
 }

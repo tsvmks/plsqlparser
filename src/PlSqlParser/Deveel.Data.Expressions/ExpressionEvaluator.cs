@@ -103,24 +103,52 @@ if (ob is RoutineInvoke) {
 			}
 
 			protected override Expression VisitBinary(BinaryExpression expression) {
-				elements.Add(expression.First.Evaluate(group, resolver, context));
-				elements.Add(expression.Second.Evaluate(group, resolver, context));
+				var sortedEval = new[] {
+					new SortedEvalInfo(0, expression.First),
+					new SortedEvalInfo(1, expression.Second)
+				}
+					.OrderByDescending(x => x.Precedence)
+					.ToArray();
+
+				foreach (var evalInfo in sortedEval) {
+					evalInfo.Result = evalInfo.Expression.Evaluate(group, resolver, context);
+				}
+
+				var results = sortedEval
+					.OrderBy(x => x.Offset)
+					.Select(x => x.Result)
+					.ToArray();
+
+				elements.Add(results[0]);
+				elements.Add(results[1]);
 				elements.Add(expression.Operator);
 				return expression;
 			}
 
+			private class SortedEvalInfo {
+				public SortedEvalInfo(int offset, Expression expression) {
+					Offset = offset;
+					Expression = expression;
+				}
+
+				public int Offset { get; private set; }
+				public DataObject Result { get; set; }
+				public Expression Expression { get; private set; }
+
+				public int Precedence {
+					get { return Expression.Precedence; }
+				}
+			}
+
 			protected override Expression VisitUnary(UnaryExpression expression) {
 				elements.Add(expression.Operand);
+				elements.Add(expression.Operator);
 				return expression;
 			}
 
 			protected override Expression VisitConstant(ConstantExpression expression) {
 				elements.Add(expression.Value);
 				return expression;
-			}
-
-			protected override Expression VisitMethodCall(FunctionCallExpression expression) {
-				return base.VisitMethodCall(expression);
 			}
 
 			protected override Expression VisitSubQuery(SubQueryExpression expression) {

@@ -26,5 +26,9 @@ namespace Deveel.Data.Sql {
 				builder.Append(Alias);
 			}
 		}
+
+		public SelectColumn Prepare(IExpressionPreparer preparer) {
+			return new SelectColumn(Expression.Prepare(preparer), Alias);
+		}
 	}
 }

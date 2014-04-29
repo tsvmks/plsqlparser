@@ -964,7 +964,7 @@ Expression PlSqlPrimaryExpression():
   | t = <S_CHAR_LITERAL> { exp = Expression.Constant(ParserUtil.Unquote(t.image)); }
   | "NULL" { exp = Expression.Constant(null); }
   | exp = SQLCaseExpression()
-  | "(" (LOOKAHEAD(3) selectExp = Select() { exp = Expression.Subquery(selectExp); } | 
+  | "(" (LOOKAHEAD(3) selectExp = Select() { exp = Expression.Query(selectExp); } | 
        exp = PlSqlExpression() { exp = Expression.Subset(exp); } ) ")"
   | varBind = BindVariable() { exp = Expression.Variable(varBind); }
   | LOOKAHEAD(2) exp = SQLCastExpression()
@@ -1498,7 +1498,7 @@ Expression SQLPrimaryExpression():
   | t = <S_CHAR_LITERAL> { exp = Expression.Constant(ParserUtil.Unquote(t.image));}
   | "NULL" { exp = Expression.Constant(ParserUtil.Null()); }
   | exp = SQLCaseExpression()
-  | "(" (LOOKAHEAD(3) selectExpr = Select() { exp = Expression.Subquery(selectExpr); } | 
+  | "(" (LOOKAHEAD(3) selectExpr = Select() { exp = Expression.Query(selectExpr); } | 
            exp = SQLExpression()) { exp = Expression.Subset(exp); } ")"
   | varBind = BindVariable() { exp = Expression.Variable(varBind); }
   | LOOKAHEAD(2) exp = SQLCastExpression()

@@ -4,7 +4,8 @@ using System.Text;
 using Deveel.Data.Expressions;
 
 namespace Deveel.Data.Sql {
-	public sealed class ByColumn {
+	[Serializable]
+	public sealed class ByColumn : IPreparable {
 		public ByColumn(Expression exp, bool ascending) {
 			Expression = exp;
 			Ascending = ascending;
@@ -23,6 +24,17 @@ namespace Deveel.Data.Sql {
 
 			builder.Append(" ");
 			builder.Append(Ascending ? "ASC" : "DESC");
+		}
+
+		public ByColumn Prepare(IExpressionPreparer preparer) {
+			var exp = Expression;
+			if (exp != null)
+				exp = exp.Prepare(preparer);
+			return new ByColumn(exp, Ascending);
+		}
+
+		object IPreparable.Prepare(IExpressionPreparer preparer) {
+			return Prepare(preparer);
 		}
 	}
 }

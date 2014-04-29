@@ -98,5 +98,18 @@ namespace Deveel.Data.Sql {
 			builder.Append("FROM ");
 
 		}
+
+		public FromClause Prepare(IExpressionPreparer preparer) {
+			var clause = new FromClause();
+
+			clause.JoinSet = JoinSet.Prepare(preparer);
+
+			// Prepare the StatementTree sub-queries in the from tables
+			foreach (FromTable table in fromTableList) {
+				clause.fromTableList.Add(table.Prepare(preparer));
+			}
+
+			return clause;
+		}
 	}
 }

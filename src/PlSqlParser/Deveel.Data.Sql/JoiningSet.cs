@@ -64,5 +64,19 @@ namespace Deveel.Data.Sql {
 				: this(type, null) {
 			}
 		}
+
+		public JoiningSet Prepare(IExpressionPreparer preparer) {
+			var joiningSet = new JoiningSet();
+			foreach (object obj in joinSet) {
+				if (obj is Expression) {
+					var exp = obj as Expression;
+					joiningSet.joinSet.Add(exp.Prepare(preparer));
+				} else {
+					joiningSet.joinSet.Add(obj);
+				}
+			}
+
+			return joiningSet;
+		}
 	}
 }

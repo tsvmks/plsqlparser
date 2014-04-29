@@ -2243,7 +2243,7 @@ void MergeSetColumn():
       mcc_consume_token(154);
       if (mcc_2_18(3)) {
         selectExp = Select();
-                                             exp = Expression.Subquery(selectExp);
+                                             exp = Expression.Query(selectExp);
       } else {
         switch ((mcc_ntk==-1)?mcc_mntk():mcc_ntk) {
         case K_CASE:
@@ -4008,7 +4008,7 @@ JoinType JoinType():
       mcc_consume_token(154);
       if (mcc_2_46(3)) {
         selectExpr = Select();
-                                              exp = Expression.Subquery(selectExpr);
+                                              exp = Expression.Query(selectExpr);
       } else if (mcc_2_47(1)) {
         exp = SQLExpression();
       } else {
