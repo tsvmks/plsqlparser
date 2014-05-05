@@ -36,11 +36,11 @@ namespace Deveel.Data.Query {
 		}
 
 		public override ITable Evaluate(IQueryContext context) {
-			ITable t = Child.Evaluate(context);
+			Table t = (Table) Child.Evaluate(context);
 			int sz = columns.Length;
 			int[] colMap = new int[sz];
 			for (int i = 0; i < sz; ++i) {
-				colMap[i] = t.TableInfo.IndexOfColumn(columns[i]);
+				colMap[i] = t.FindFieldName(columns[i]);
 			}
 
 			return t.Distinct(colMap);

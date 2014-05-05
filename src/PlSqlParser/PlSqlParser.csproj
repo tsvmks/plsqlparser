@@ -38,15 +38,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Deveel.Data.DbSystem\BaseDataTable.cs" />
-    <Compile Include="Deveel.Data.DbSystem\ChildTableInfo.cs" />
     <Compile Include="Deveel.Data.DbSystem\CompositeTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\DatabaseConnectionExtensions.cs" />
     <Compile Include="Deveel.Data.DbSystem\DatabaseQueryContext.cs" />
     <Compile Include="Deveel.Data.DbSystem\DataColumnInfo.cs" />
     <Compile Include="Deveel.Data.DbSystem\DataRow.cs" />
     <Compile Include="Deveel.Data.DbSystem\DataTable.cs" />
+    <Compile Include="Deveel.Data.DbSystem\DataTableBase.cs" />
     <Compile Include="Deveel.Data.DbSystem\DataTableInfo.cs" />
+    <Compile Include="Deveel.Data.DbSystem\DefaultDataTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\FilterTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\FunctionTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\ICellCache.cs" />
@@ -60,18 +60,15 @@
     <Compile Include="Deveel.Data.DbSystem\ITableSpaceContext.cs" />
     <Compile Include="Deveel.Data.DbSystem\IVariableResolver.cs" />
     <Compile Include="Deveel.Data.DbSystem\JoinedTable.cs" />
-    <Compile Include="Deveel.Data.DbSystem\JoinedTableInfo.cs" />
     <Compile Include="Deveel.Data.DbSystem\NaturallyJoinedTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\OuterTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\RawTableInformation.cs" />
     <Compile Include="Deveel.Data.DbSystem\ReferenceTable.cs" />
-    <Compile Include="Deveel.Data.DbSystem\RootTable.cs" />
+    <Compile Include="Deveel.Data.DbSystem\SimpleDataRowEnumerator.cs" />
     <Compile Include="Deveel.Data.DbSystem\SimpleRowEnumerator.cs" />
     <Compile Include="Deveel.Data.DbSystem\SubsetColumnTable.cs" />
-    <Compile Include="Deveel.Data.DbSystem\SubsetTableInfo.cs" />
     <Compile Include="Deveel.Data.DbSystem\Table.cs" />
     <Compile Include="Deveel.Data.DbSystem\TableExtensions.cs" />
-    <Compile Include="Deveel.Data.DbSystem\TableVariableResolver.cs" />
     <Compile Include="Deveel.Data.DbSystem\TemporaryTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\VirtualTable.cs" />
     <Compile Include="Deveel.Data.Expressions\AddExpression.cs" />

@@ -14,32 +14,29 @@
 //    limitations under the License.
 
 using System;
-using System.Text;
 
 using Deveel.Data.Expressions;
+using Deveel.Data.Types;
 
-namespace Deveel.Data.Sql {
+namespace Deveel.Data.DbSystem {
 	[Serializable]
-	public sealed class FilterExpression {
-		public FilterExpression(Expression expression) {
-			if (expression == null)
-				throw new ArgumentNullException("expression");
+	public sealed class DataColumnInfo {
+		internal DataColumnInfo(DataTableInfo tableInfo, string name, DataType dataType) {
+			TableInfo = tableInfo;
+			DataType = dataType;
+			Name = name;
 
-			Expression = expression;
+			IsNullable = true;
 		}
 
-		public Expression Expression { get; private set; }
+		public string Name { get; private set; }
 
-		public FilterExpression Prepare(IExpressionPreparer preparer) {
-			return new FilterExpression(Expression.Prepare(preparer));
-		}
+		public DataTableInfo TableInfo { get; set; }
 
-		internal FilterExpression Append(Expression expression) {
-			return new FilterExpression(Expression.And(Expression, expression));
-		}
+		public DataType DataType { get; private set; }
 
-		internal void DumpSqlTo(StringBuilder builder) {
-			Expression.DumpTo(builder);
-		}
+		public bool IsNullable { get; set; }
+
+		public Expression DefaultExpression { get; set; }
 	}
 }

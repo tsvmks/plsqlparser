@@ -56,5 +56,9 @@ namespace Deveel.Data {
 		public override int GetHashCode() {
 			return s.GetHashCode();
 		}
+
+		public override string ToString() {
+			return s;
+		}
 	}
 }

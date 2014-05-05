@@ -26,7 +26,7 @@ using Deveel.Data.Types;
 namespace Deveel.Data.DbSystem {
 	public static class TableExtenions {
 		private static int RequireColumnIndex(DataTableInfo tableInfo, string columnName) {
-			var offset = tableInfo.IndexOfColumn(columnName);
+			var offset = tableInfo.FindColumnName(columnName);
 			if (offset == -1)
 				throw new ArgumentException(String.Format("Table {0} has no column named {1}", tableInfo.Name, columnName));
 
@@ -47,14 +47,6 @@ namespace Deveel.Data.DbSystem {
 			return rows.Any() ?  table.GetValue(column, rows.First()) : null;
 		}
 
-		public static DataObject GetFirstCell(this ITable table, ObjectName columnName) {
-			return table.GetFirstCell(table.TableInfo.IndexOfColumn(columnName));
-		}
-
-		public static DataObject GetFirstCell(this ITable table, string columnName) {
-			return table.GetFirstCell(table.TableInfo.ResolveColumnName(columnName));
-		}
-
 		public static DataObject[] GetFirstCell(this ITable table, int[] columns) {
 			if (columns.Length > 1)
 				throw new ApplicationException("Multi-column GetLastCell not supported.");
@@ -62,21 +54,9 @@ namespace Deveel.Data.DbSystem {
 			return SingleArrayCellMap(table.GetFirstCell(columns[0]));
 		}
 
-		public static DataObject[] GetFirstCell(this ITable table, params ObjectName[] columnNames) {
-			return table.GetFirstCell(table.TableInfo.IndexOfColumns(columnNames));
-		}
-
 		public static DataObject GetLastCell(this ITable table, int column) {
 			IEnumerable<long> rows = table.SelectLast(column);
 			return rows.Any() ? table.GetValue(column, rows.First()) : null;
-		}
-
-		public static DataObject GetLastCell(this ITable table, ObjectName columnName) {
-			return table.GetLastCell(table.TableInfo.IndexOfColumn(columnName));
-		}
-
-		public static DataObject GetLastCell(this ITable table, string columnName) {
-			return table.GetLastCell(table.TableInfo.ResolveColumnName(columnName));
 		}
 
 		public static DataObject[] GetLastCell(this ITable table, int[] columns) {
@@ -107,24 +87,8 @@ namespace Deveel.Data.DbSystem {
 			return table.ColumnMatchesValue(column, Operator.Equal, value);
 		}
 
-		public static bool ColumnContainsValue(this ITable table, ObjectName columnName, DataObject value) {
-			return table.ColumnContainsValue(table.TableInfo.IndexOfColumn(columnName), value);
-		}
-
-		public static bool ColumnContainsValue(this ITable table, string columnName, DataObject value) {
-			return table.ColumnContainsValue(table.TableInfo.ResolveColumnName(columnName), value);
-		}
-
 		public static bool ColumnMatchesValue(this ITable table, int column, Operator op, DataObject value) {
 			return table.SelectRows(column, op, value).Any();
-		}
-
-		public static bool ColumnMatchesValue(this ITable table, ObjectName columnName, Operator op, DataObject value) {
-			return table.ColumnMatchesValue(table.TableInfo.IndexOfColumn(columnName), op, value);
-		}
-
-		public static bool ColumnMatchesValue(this ITable table, string columnName, Operator op, DataObject value) {
-			return table.ColumnMatchesValue(table.TableInfo.ResolveColumnName(columnName), op, value);
 		}
 
 		public static ITable SimpleSelect(this ITable table, IQueryContext context, ObjectName columnName, Operator op, Expression expression) {
@@ -174,8 +138,10 @@ namespace Deveel.Data.DbSystem {
 
 			// Must be a non-trivial range selection.
 
+			var t = (Table) table;
+
 			// Find the column index of the column selected
-			int column = table.TableInfo.IndexOfColumn(columnName);
+			int column = t.FindFieldName(columnName);
 
 			if (column == -1)
 				throw new Exception("Unable to find the column given to select the range of: " + columnName.Name);
@@ -185,7 +151,7 @@ namespace Deveel.Data.DbSystem {
 
 			// Make a new table with the range selected
 			VirtualTable vTable = new VirtualTable((Table)table);
-			vTable.Set(table, rows);
+			vTable.Set((Table)table, rows);
 
 			// We know the new set is ordered by the column.
 			vTable.OptimisedPostSet(column);
@@ -213,7 +179,7 @@ namespace Deveel.Data.DbSystem {
 			// new table.
 
 			VirtualTable vTable = new VirtualTable((Table)table);
-			vTable.Set(table, rows);
+			vTable.Set((Table)table, rows);
 
 			return table;
 		}
@@ -337,7 +303,7 @@ namespace Deveel.Data.DbSystem {
 				return table;
 
 			VirtualTable vTable = new VirtualTable((Table) table);
-			vTable.Set(table, new List<long>(0));
+			vTable.Set((Table) table, new List<long>(0));
 			return vTable;
 		}
 
@@ -371,7 +337,7 @@ namespace Deveel.Data.DbSystem {
 				return theTable.EmptySelect();
 			}
 
-			ITable sourceTable;
+			Table sourceTable;
 			int lhsColIndex;
 			// Is the lhs expression a single variable?
 			ObjectName expVar = expression.AsVariable();
@@ -384,8 +350,8 @@ namespace Deveel.Data.DbSystem {
 				lhsColIndex = 0;
 			} else {
 				// The expression is an easy to resolve reference in this table.
-				sourceTable = theTable;
-				lhsColIndex = sourceTable.TableInfo.IndexOfColumn(expVar);
+				sourceTable = (Table) theTable;
+				lhsColIndex = sourceTable.FindFieldName(expVar);
 				if (lhsColIndex == -1) {
 					throw new ApplicationException("Can't find column '" + expVar + "'.");
 				}
@@ -415,21 +381,21 @@ namespace Deveel.Data.DbSystem {
 			//   For <> type ANY we iterate through 'source' only including those
 			//   rows that a <> query on 'table' returns size() != 0.
 
-			IEnumerable<long> selectRows;
+			IList<long> selectRows;
 			if (op.IsEquivalent(Operator.Greater) ||
 				op.IsEquivalent(Operator.GreaterOrEqual)) {
 				// Select the first from the set (the lowest value),
 				DataObject lowestCell = table.GetFirstCell(0);
 				// Select from the source table all rows that are > or >= to the
 				// lowest cell,
-				selectRows = sourceTable.SelectRows(lhsColIndex, op, lowestCell);
+				selectRows = sourceTable.SelectRows(lhsColIndex, op, lowestCell).ToList();
 			} else if (op.IsEquivalent(Operator.Smaller) ||
 				op.IsEquivalent(Operator.SmallerOrEqual)) {
 				// Select the last from the set (the highest value),
 				DataObject highestCell = table.GetLastCell(0);
 				// Select from the source table all rows that are < or <= to the
 				// highest cell,
-				selectRows = sourceTable.SelectRows(lhsColIndex, op, highestCell);
+				selectRows = sourceTable.SelectRows(lhsColIndex, op, highestCell).ToList();
 			} else if (op.IsEquivalent(Operator.Equal)) {
 				// Equiv. to IN
 				selectRows = sourceTable.In(table, lhsColIndex, 0);
@@ -438,7 +404,7 @@ namespace Deveel.Data.DbSystem {
 				DataObject cell = table.GetSingleCell(0);
 				if (cell != null) {
 					// All values from 'source_table' that are <> than the given cell.
-					selectRows = sourceTable.SelectRows(lhsColIndex, op, cell);
+					selectRows = sourceTable.SelectRows(lhsColIndex, op, cell).ToList();
 				} else {
 					// No, this means there are different values in the given set so the
 					// query evaluates to the entire table.
@@ -450,7 +416,7 @@ namespace Deveel.Data.DbSystem {
 
 			// Make into a table to return.
 			VirtualTable rtable = new VirtualTable((Table)theTable);
-			rtable.Set(theTable, selectRows);
+			rtable.Set((Table)theTable, selectRows);
 
 			return rtable;
 		}
@@ -509,7 +475,7 @@ namespace Deveel.Data.DbSystem {
 				return table.EmptySelect();
 			}
 
-			ITable sourceTable;
+			Table sourceTable;
 			int colIndex;
 			// Is the lhs expression a single variable?
 			ObjectName expVar = expression.AsVariable();
@@ -518,14 +484,14 @@ namespace Deveel.Data.DbSystem {
 				// This is a complex expression so make a FunctionTable as our new
 				// source.
 				DatabaseQueryContext dbContext = (DatabaseQueryContext)context;
-				FunctionTable funTable = new FunctionTable(table, new[] { expression }, new [] { "1" }, dbContext);
+				FunctionTable funTable = new FunctionTable((Table)table, new[] { expression }, new [] { "1" }, dbContext);
 				sourceTable = funTable;
 				colIndex = 0;
 			} else {
 				// The expression is an easy to resolve reference in this table.
-				sourceTable = table;
+				sourceTable = (Table) table;
 
-				colIndex = sourceTable.TableInfo.IndexOfColumn(expVar);
+				colIndex = sourceTable.FindFieldName(expVar);
 				if (colIndex == -1)
 					throw new ApplicationException("Can't find column '" + expVar + "'.");
 			}
@@ -554,27 +520,27 @@ namespace Deveel.Data.DbSystem {
 			//   empty table.
 			//   For <> type ALL we use the 'not in' algorithm.
 
-			IEnumerable<long> selectList;
+			IList<long> selectList;
 			if (op.IsEquivalent(Operator.Greater) || 
 				op.IsEquivalent(Operator.GreaterOrEqual)) {
 				// Select the last from the set (the highest value),
 				DataObject highestCell = other.GetLastCell(0);
 				// Select from the source table all rows that are > or >= to the
 				// highest cell,
-				selectList = sourceTable.SelectRows(colIndex, op, highestCell);
+				selectList = sourceTable.SelectRows(colIndex, op, highestCell).ToList();
 			} else if (op.IsEquivalent(Operator.Smaller) ||
 				op.IsEquivalent(Operator.SmallerOrEqual)) {
 				// Select the first from the set (the lowest value),
 				DataObject lowestCell = other.GetFirstCell(0);
 				// Select from the source table all rows that are < or <= to the
 				// lowest cell,
-				selectList = sourceTable.SelectRows(colIndex, op, lowestCell);
+				selectList = sourceTable.SelectRows(colIndex, op, lowestCell).ToList();
 			} else if (op.IsEquivalent(Operator.Equal)) {
 				// Select the single value from the set (if there is one).
 				DataObject singleCell = other.GetSingleCell(0);
 				if (singleCell != null) {
 					// Select all from source_table all values that = this cell
-					selectList = sourceTable.SelectRows(colIndex, op, singleCell);
+					selectList = sourceTable.SelectRows(colIndex, op, singleCell).ToList();
 				} else {
 					// No single value so return empty set (no value in LHS will equal
 					// a value in RHS).
@@ -582,14 +548,14 @@ namespace Deveel.Data.DbSystem {
 				}
 			} else if (op.IsEquivalent(Operator.NotEqual)) {
 				// Equiv. to NOT IN
-				selectList = sourceTable.NotIn(other, colIndex, 0);
+				selectList = sourceTable.NotIn(other, colIndex, 0).ToList();
 			} else {
 				throw new ApplicationException("Don't understand operator '" + op + "' in ALL.");
 			}
 
 			// Make into a table to return.
 			VirtualTable rtable = new VirtualTable(theTable);
-			rtable.Set(table, selectList);
+			rtable.Set((Table)table, selectList);
 			return rtable;
 		}
 

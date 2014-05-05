@@ -86,7 +86,7 @@ namespace Deveel.Data.Query {
 		public override ITable Evaluate(IQueryContext context) {
 			ITable childTable = Child.Evaluate(context);
 			var dbContext = (DatabaseQueryContext)context;
-			var funTable = new FunctionTable(childTable, functionList, nameList, dbContext);
+			var funTable = new FunctionTable((Table)childTable, functionList, nameList, dbContext);
 			// If no columns then it is implied the whole table is the group.
 			if (columns == null) {
 				funTable.SetWholeTableAsGroup();

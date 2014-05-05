@@ -18,6 +18,8 @@ namespace Deveel.Data.DbSystem {
 			var result = SqlExecutor.Execute(connection, query);
 
 			Assert.IsNotNull(result);
+			Assert.AreEqual(1, result.Length);
+			Assert.AreEqual(1, result[0].RowCount);
 		}
 
 		[SetUp]

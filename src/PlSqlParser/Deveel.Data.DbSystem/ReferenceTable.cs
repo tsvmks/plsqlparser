@@ -1,5 +1,5 @@
-﻿// 
-//  Copyright 2014  Deveel
+// 
+//  Copyright 2010  Deveel
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,22 +16,60 @@
 using System;
 
 namespace Deveel.Data.DbSystem {
-	public class ReferenceTable : FilterTable, IRootTable {
-		private readonly DataTableInfo tableInfo;
+	public sealed class ReferenceTable : FilterTable, IRootTable {
+		/// <summary>
+		/// This represents the new name of the table.
+		/// </summary>
+		private readonly ObjectName table_name;
 
-		public ReferenceTable(Table parent, ObjectName name) 
-			: base(parent) {
-			tableInfo = new DataTableInfo(name);
-			parent.TableInfo.CopyColumnsTo(tableInfo);
-			tableInfo.IsReadOnly = true;
+		/// <summary>
+		/// The modified DataTableInfo object for this reference.
+		/// </summary>
+		private readonly DataTableInfo modifiedTableInfo;
+
+
+		internal ReferenceTable(Table table, ObjectName tname)
+			: base(table) {
+			table_name = tname;
+
+			// Create a modified table info based on the parent info.
+			modifiedTableInfo = table.TableInfo.Clone(tname);
+			modifiedTableInfo.IsReadOnly = true;
 		}
 
-		public DataTableInfo TableInfo {
-			get { return tableInfo; }
+		internal ReferenceTable(Table table, DataTableInfo info)
+			: base(table) {
+			table_name = info.TableName;
+
+			modifiedTableInfo = info;
 		}
 
-		public bool Equals(IRootTable other) {
-			return this == other;
+		public ObjectName TableName {
+			get { return table_name; }
+		}
+
+		/// <inheritdoc/>
+		public override DataTableInfo TableInfo {
+			get { return modifiedTableInfo; }
+		}
+
+		/// <inheritdoc/>
+		public override int FindFieldName(ObjectName v) {
+			ObjectName tableName = v.Parent;
+			if (tableName != null && tableName.Equals(TableName)) {
+				return TableInfo.FastFindColumnName(v.Name);
+			}
+			return -1;
+		}
+
+		/// <inheritdoc/>
+		public override ObjectName GetResolvedVariable(int column) {
+			return new ObjectName(TableName, TableInfo[column].Name);
+		}
+
+		/// <inheritdoc/>
+		public bool Equals(IRootTable table) {
+			return (this == table);
 		}
 	}
 }

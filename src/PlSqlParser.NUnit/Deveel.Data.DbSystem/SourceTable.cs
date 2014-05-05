@@ -55,7 +55,7 @@ namespace Deveel.Data.DbSystem {
 		}
 
 		public void SetValue(string columnName, long row, DataObject value) {
-			SetValue(TableInfo.IndexOfColumn(columnName), row, value);
+			SetValue(TableInfo.FindColumnName(columnName), row, value);
 		}
 
 		public void SetValue(int column, DataObject value) {
@@ -63,7 +63,7 @@ namespace Deveel.Data.DbSystem {
 		}
 
 		public void SetValue(string columnName, DataObject value) {
-			SetValue(TableInfo.IndexOfColumn(columnName), value);
+			SetValue(TableInfo.FindColumnName(columnName), value);
 		}
 
 		public IEnumerator<DataRow> GetEnumerator() {

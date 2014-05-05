@@ -152,7 +152,7 @@ namespace Deveel.Data.Query {
 			if (column != null) {
 				if (!caseInsensitive) {
 					// Can we resolve the column in this table?
-					int i = dataTableInfo.IndexOfColumn(column);
+					int i = dataTableInfo.FindColumnName(column);
 					// If i doesn't equal -1 then we've found our column
 					return i == -1 ? 0 : 1;
 				}
@@ -184,7 +184,7 @@ namespace Deveel.Data.Query {
 			if (column != null) {
 				if (!caseInsensitive) {
 					// Can we resolve the column in this table?
-					int i = dataTableInfo.IndexOfColumn(column);
+					int i = dataTableInfo.FindColumnName(column);
 					if (i == -1)
 						throw new ApplicationException("Could not resolve '" + column + "'");
 

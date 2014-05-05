@@ -127,6 +127,16 @@ namespace Deveel.Data.Sql {
 			if (From != null) {
 				From.DumpSqlTo(builder);
 			}
+
+			if (Where != null) {
+				builder.Append(" WHERE ");
+				Where.DumpSqlTo(builder);
+			}
+
+			if (Having != null) {
+				builder.Append(" HAVING ");
+				Having.DumpSqlTo(builder);
+			}
 		}
 	}
 }

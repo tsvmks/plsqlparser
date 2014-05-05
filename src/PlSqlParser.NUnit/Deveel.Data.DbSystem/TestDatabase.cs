@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 
+using Deveel.Data.Index;
 using Deveel.Data.Query;
 using Deveel.Data.Transactions;
 
@@ -25,27 +26,21 @@ namespace Deveel.Data.DbSystem {
 
 		public TestTable CreateTable(DataTableInfo tableInfo) {
 			var table = new TestTable(tableInfo);
-			tables[tableInfo.Name] = table;
+			tables[tableInfo.TableName] = table;
 			return table;
 		}
-
-		#region TestTable
-
-		#endregion
 
 		#region DatabaseConnection
 
 		class DatabaseConnection : IDatabaseConnection {
-			private readonly TestDatabase database;
-
 			public DatabaseConnection(TestDatabase database, string currentSchema) {
-				this.database = database;
+				Database = database;
 				CurrentSchema = currentSchema;
-				Transaction = new FakeTransaction(database);
+				Transaction = new FakeTransaction(this);
 			}
 
 			public bool TableExists(ObjectName name) {
-				return database.tables.ContainsKey(name);
+				return Database.tables.ContainsKey(name);
 			}
 
 			public bool IsInCaseInsensitive {
@@ -64,8 +59,9 @@ namespace Deveel.Data.DbSystem {
 				// If the table is aliased, set a new DataTableInfo with the given name
 				if (givenName != null) {
 					var newTableInfo = new DataTableInfo(givenName.Clone());
-					foreach (var columnInfo in tableInfo) {
-						newTableInfo.AddColumn(columnInfo.Name, columnInfo.DataType, columnInfo.IsNullable);
+					for (int i = 0; i < tableInfo.ColumnCount; i++) {
+						var columnInfo = tableInfo[i];
+						newTableInfo.AddColumn(columnInfo.Name, columnInfo.DataType, !columnInfo.IsNotNull);
 					}
 					
 					newTableInfo.IsReadOnly = true;
@@ -78,7 +74,7 @@ namespace Deveel.Data.DbSystem {
 
 			private DataTableInfo GetTableInfo(ObjectName tableName) {
 				ITable table;
-				if (!database.tables.TryGetValue(tableName, out table))
+				if (!Database.tables.TryGetValue(tableName, out table))
 					return null;
 
 				return table.TableInfo;
@@ -86,9 +82,11 @@ namespace Deveel.Data.DbSystem {
 
 			public string CurrentSchema { get; private set; }
 
-			public IDatabase Database {
-				get { return database; }
+			IDatabase IDatabaseConnection.Database {
+				get { return Database; }
 			}
+
+			public TestDatabase Database { get; private set; }
 
 			public ITransaction Transaction { get; private set; }
 
@@ -137,22 +135,22 @@ namespace Deveel.Data.DbSystem {
 		#region FakeTransaction
 
 		class FakeTransaction : ITransaction {
-			private readonly TestDatabase database;
+			private DatabaseConnection connection;
 
-			public FakeTransaction(TestDatabase database) {
-				this.database = database;
+			public FakeTransaction(DatabaseConnection connection) {
+				this.connection = connection;
 			}
 
 			public ObjectName[] GetTables() {
-				return database.tables.Keys.ToArray();
+				return connection.Database.tables.Keys.ToArray();
 			}
 
 			public bool TableExists(ObjectName tableName) {
-				return database.tables.ContainsKey(tableName);
+				return connection.Database.tables.ContainsKey(tableName);
 			}
 
 			public bool RealTableExists(ObjectName tableName) {
-				throw new NotImplementedException();
+				return TableExists(tableName);
 			}
 
 			public ObjectName ResolveToTableName(string currentSchema, string name, bool caseInsensitive) {
@@ -165,7 +163,7 @@ namespace Deveel.Data.DbSystem {
 
 			public DataTableInfo GetTableInfo(ObjectName tableName) {
 				ITable table;
-				if (database.tables.TryGetValue(tableName, out table))
+				if (connection.Database.tables.TryGetValue(tableName, out table))
 					return table.TableInfo;
 
 				return null;
@@ -173,8 +171,8 @@ namespace Deveel.Data.DbSystem {
 
 			public ITable GetTable(ObjectName tableName) {
 				ITable table;
-				if (database.tables.TryGetValue(tableName, out table))
-					return table;
+				if (connection.Database.tables.TryGetValue(tableName, out table))
+					return new DataTable(connection, table);
 
 				return null;
 			}

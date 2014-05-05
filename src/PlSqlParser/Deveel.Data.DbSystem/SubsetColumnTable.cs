@@ -1,5 +1,5 @@
-﻿// 
-//  Copyright 2014  Deveel
+// 
+//  Copyright 2010  Deveel
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -19,39 +19,116 @@ using System.Collections.Generic;
 using Deveel.Data.Index;
 
 namespace Deveel.Data.DbSystem {
+	/// <summary>
+	/// Filter table placed at the top of a <see cref="Table"/>.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// The purpose is to only provide a view of the columns that are required.
+	/// </para>
+	/// In a Select query it may create a query with only the subset of columns 
+	/// that were originally in the table set. This object allows to provide an
+	/// interface to only the columns that the table is allowed to access.
+	/// <para>
+	/// The class implements <see cref="IRootTable"/> which 
+	/// means a union operation will not decend further past this table when 
+	/// searching for the roots.
+	/// </para>
+	/// </remarks>
 	public sealed class SubsetColumnTable : FilterTable, IRootTable {
-		private readonly SubsetTableInfo subsetTableInfo;
+		/// <summary>
+		/// Maps from the column in this table to the column in the parent table.
+		/// </summary>
+		/// <remarks>
+		/// The number of entries of this should match the number of columns in this 
+		/// table.
+		/// </remarks>
+		private int[] column_map;
 
-		public SubsetColumnTable(Table parent, int[] mapping, ObjectName[] aliases)
+		/// <summary>
+		/// Maps from the column in the parent table, to the column in this table.
+		/// </summary>
+		/// <remarks>
+		/// The size of this should match the number of columns in the parent table.
+		/// </remarks>
+		private int[] reverse_column_map;
+
+		/// <summary>
+		/// The <see cref="TableInfo"/> object that describes the subset column of 
+		/// this table.
+		/// </summary>
+		private DataTableInfo subsetTableInfo;
+
+		/// <summary>
+		/// The resolved <see cref="VariableName"/> aliases for this subset.
+		/// </summary>
+		/// <remarks>
+		/// These are returned by <see cref="GetResolvedVariable"/> and used in searches for 
+		/// <see cref="FindFieldName"/>. This can be used to remap the variable names 
+		/// used to match the columns.
+		/// </remarks>
+		private ObjectName[] aliases;
+
+
+		///<summary>
+		///</summary>
+		///<param name="parent"></param>
+		public SubsetColumnTable(Table parent)
 			: base(parent) {
-			int[] reverseColumnMap = new int[Parent.TableInfo.ColumnCount];
-			for (int i = 0; i < reverseColumnMap.Length; ++i) {
-				reverseColumnMap[i] = -1;
+		}
+
+		/// <summary>
+		/// Adds a column map into this table.
+		/// </summary>
+		/// <param name="mapping">The array containing a map to the column in 
+		/// the parent table that we want the column number to reference.</param>
+		/// <param name="aliases"></param>
+		public void SetColumnMap(int[] mapping, ObjectName[] aliases) {
+			reverse_column_map = new int[Parent.ColumnCount];
+			for (int i = 0; i < reverse_column_map.Length; ++i) {
+				reverse_column_map[i] = -1;
 			}
+			column_map = mapping;
+
+			this.aliases = aliases;
 
 			DataTableInfo parentInfo = Parent.TableInfo;
-
-			subsetTableInfo = new SubsetTableInfo(parentInfo.Name);
+			subsetTableInfo = new DataTableInfo(parentInfo.TableName);
 
 			for (int i = 0; i < mapping.Length; ++i) {
-				int mapTo = mapping[i];
-				DataColumnInfo colInfo = Parent.TableInfo[mapTo];
-				var newColumn = subsetTableInfo.NewColumn(aliases[i].Name, colInfo.DataType);
-				newColumn.DefaultExpression = colInfo.DefaultExpression;
-				newColumn.IsNullable = colInfo.IsNullable;
-
+				int map_to = mapping[i];
+				DataColumnInfo colInfo = Parent.GetColumnInfo(map_to).Clone();
+				colInfo.Name = aliases[i].Name;
 				subsetTableInfo.AddColumn(colInfo);
-				reverseColumnMap[mapTo] = i;
+				reverse_column_map[map_to] = i;
 			}
 
-			subsetTableInfo.Setup(mapping, aliases);
 			subsetTableInfo.IsReadOnly = true;
 		}
 
+		/// <inheritdoc/>
+		public override int ColumnCount {
+			get { return aliases.Length; }
+		}
+
+		/// <inheritdoc/>
+		public override int FindFieldName(ObjectName v) {
+			for (int i = 0; i < aliases.Length; ++i) {
+				if (v.Equals(aliases[i])) {
+					return i;
+				}
+			}
+			return -1;
+		}
 
 		/// <inheritdoc/>
 		public override DataTableInfo TableInfo {
 			get { return subsetTableInfo; }
+		}
+
+		/// <inheritdoc/>
+		public override ObjectName GetResolvedVariable(int column) {
+			return aliases[column];
 		}
 
 		/// <inheritdoc/>
@@ -61,23 +138,29 @@ namespace Deveel.Data.DbSystem {
 			// in this subset column table.  Otherwise we leave as is.
 			// The reason is because FilterTable pretends the call came from its
 			// parent if a request is made on this table.
-			int mappedOriginalColumn = originalColumn;
+			int mapped_original_column = originalColumn;
 			if (table == this) {
-				mappedOriginalColumn = subsetTableInfo.MapColumn(originalColumn);
+				mapped_original_column = column_map[originalColumn];
 			}
 
-			return base.GetSelectableSchemeFor(subsetTableInfo.MapColumn(column), mappedOriginalColumn, table);
+			return base.GetSelectableSchemeFor(column_map[column], mapped_original_column, table);
 		}
 
 		/// <inheritdoc/>
 		internal override void SetToRowTableDomain(int column, IList<long> rowSet, ITable ancestor) {
 
-			base.SetToRowTableDomain(subsetTableInfo.MapColumn(column), rowSet, ancestor);
+			base.SetToRowTableDomain(column_map[column], rowSet, ancestor);
+		}
+
+		/// <inheritdoc/>
+		internal override RawTableInformation ResolveToRawTable(RawTableInformation info) {
+			throw new ApplicationException("Tricky to implement this method!");
+			// ( for a SubsetColumnTable that is )
 		}
 
 		/// <inheritdoc/>
 		public override DataObject GetValue(int column, long row) {
-			return Parent.GetValue(subsetTableInfo.MapColumn(column), row);
+			return Parent.GetValue(column_map[column], row);
 		}
 
 		// ---------- Implemented from IRootTable ----------

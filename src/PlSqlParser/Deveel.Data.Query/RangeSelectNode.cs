@@ -162,7 +162,7 @@ namespace Deveel.Data.Query {
 			}
 
 			// Find the variable field in the table.
-			int col = t.TableInfo.IndexOfColumn(v);
+			int col = ((Table) t).FindFieldName(v);
 			if (col == -1)
 				throw new ApplicationException("Couldn't find column reference in table: " + v);
 

@@ -1,5 +1,5 @@
-﻿// 
-//  Copyright 2014  Deveel
+// 
+//  Copyright 2010  Deveel
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -13,44 +13,90 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Deveel.Data.Index;
 using Deveel.Data.Sql;
 
 namespace Deveel.Data.DbSystem {
-	public class CompositeTable : Table, IRootTable {
+	class CompositeTable : Table, IRootTable {
+
+		// ---------- Members ----------
+
+		/// <summary>
+		/// The 'master table' used to resolve information about this table such as
+		/// fields and field types.
+		/// </summary>
 		private readonly Table masterTable;
+
+		/// <summary>
+		/// The tables being made a composite of.
+		/// </summary>
 		private readonly Table[] compositeTables;
+
+		/// <summary>
+		/// The list of indexes of rows to include in each table.
+		/// </summary>
 		private IList<long>[] tableIndexes;
 
+		/// <summary>
+		/// The schemes to describe the entity relation in the given column.
+		/// </summary>
 		private readonly SelectableScheme[] columnScheme;
 
+		/// <summary>
+		/// The number of root locks on this table.
+		/// </summary>
+		private int rootsLocked;
+
+		/// <summary>
+		/// Constructs the composite table given the <paramref name="masterTable"/> 
+		/// (the column structure this composite table is based on), and 
+		/// a list of tables to be the composite of this table.
+		/// </summary>
+		/// <param name="masterTable">The table defining the master structure 
+		/// for the composition. this must be one of the tables listed in
+		/// <paramref name="compositeList"/>.</param>
+		/// <param name="compositeList">The list of tables to compose given 
+		/// the structure of the master table.</param>
+		/// <remarks>
+		/// <b>Note:</b> This does not set up table indexes for a composite 
+		/// function.
+		/// </remarks>
 		public CompositeTable(Table masterTable, Table[] compositeList) {
 			this.masterTable = masterTable;
 			compositeTables = compositeList;
-			columnScheme = new SelectableScheme[masterTable.TableInfo.ColumnCount];
+			columnScheme = new SelectableScheme[masterTable.ColumnCount];
 		}
 
+		/// <summary>
+		/// Consturcts the composite table assuming the first item in the 
+		/// list is the master table.
+		/// </summary>
+		/// <param name="compositeList">The list of the tables to compose.</param>
 		public CompositeTable(Table[] compositeList)
 			: this(compositeList[0], compositeList) {
 		}
 
-		public override DataTableInfo TableInfo {
-			get { return masterTable.TableInfo; }
+
+		/// <summary>
+		/// Removes duplicate rows from the table.
+		/// </summary>
+		/// <param name="preSorted">If <b>true</b>, each composite index 
+		/// is already in sorted order.</param>
+		private void RemoveDuplicates(bool preSorted) {
+			throw new NotImplementedException();
 		}
 
-		public override long RowCount {
-			get {
-				int rowCount = 0;
-				for (int i = 0; i < tableIndexes.Length; ++i) {
-					rowCount += tableIndexes[i].Count;
-				}
-				return rowCount;
-			}
-		}
-
+		/// <summary>
+		/// Sets up the indexes in this composite table by performing for 
+		/// composite function on the tables.
+		/// </summary>
+		/// <param name="function"></param>
+		/// <param name="all">If <b>true</b>, duplicated rows are removed.</param>
 		public void SetupIndexesForCompositeFunction(CompositeFunction function, bool all) {
 			int size = compositeTables.Length;
 			tableIndexes = new IList<long>[size];
@@ -58,7 +104,7 @@ namespace Deveel.Data.DbSystem {
 			if (function == CompositeFunction.Union) {
 				// Include all row sets in all tables
 				for (int i = 0; i < size; ++i) {
-					tableIndexes[i] = new List<long>(compositeTables[i].SelectAll());
+					tableIndexes[i] = compositeTables[i].SelectAll().ToList();
 				}
 
 				if (!all)
@@ -66,12 +112,48 @@ namespace Deveel.Data.DbSystem {
 			} else {
 				throw new ApplicationException("Unrecognised composite function");
 			}
+
 		}
 
-		private void RemoveDuplicates(bool preSorted) {
-			throw new NotImplementedException();
+		// ---------- Implemented from Table ----------
+
+		/// <inheritdoc/>
+		public override IDatabase Database {
+			get { return masterTable.Database; }
 		}
 
+		/// <inheritdoc/>
+		public override int ColumnCount {
+			get { return masterTable.ColumnCount; }
+		}
+
+		/// <inheritdoc/>
+		public override long RowCount {
+			get {
+				int rowCount = 0;
+				for (int i = 0; i < tableIndexes.Length; ++i) {
+					rowCount += tableIndexes[i].Count();
+				}
+				return rowCount;
+			}
+		}
+
+		/// <inheritdoc/>
+		public override int FindFieldName(ObjectName v) {
+			return masterTable.FindFieldName(v);
+		}
+
+		/// <inheritdoc/>
+		public override DataTableInfo TableInfo {
+			get { return masterTable.TableInfo; }
+		}
+
+		/// <inheritdoc/>
+		public override ObjectName GetResolvedVariable(int column) {
+			return masterTable.GetResolvedVariable(column);
+		}
+
+		/// <inheritdoc/>
 		internal override SelectableScheme GetSelectableSchemeFor(int column, int originalColumn, Table table) {
 			SelectableScheme scheme = columnScheme[column];
 			if (scheme == null) {
@@ -96,6 +178,7 @@ namespace Deveel.Data.DbSystem {
 
 		/// <inheritdoc/>
 		internal override RawTableInformation ResolveToRawTable(RawTableInformation info) {
+			Console.Error.WriteLine("Efficiency Warning in DataTable.ResolveToRawTable.");
 			List<long> rowSet = new List<long>();
 			IEnumerator<long> e = GetRowEnumerator();
 			while (e.MoveNext()) {
@@ -105,6 +188,7 @@ namespace Deveel.Data.DbSystem {
 			return info;
 		}
 
+		/// <inheritdoc/>
 		public override DataObject GetValue(int column, long row) {
 			for (int i = 0; i < tableIndexes.Length; ++i) {
 				IList<long> ivec = tableIndexes[i];
@@ -116,8 +200,40 @@ namespace Deveel.Data.DbSystem {
 			throw new ApplicationException("Row '" + row + "' out of bounds.");
 		}
 
+		/// <inheritdoc/>
+		public override IEnumerator<long> GetRowEnumerator() {
+			return new SimpleRowEnumerator(this);
+		}
+
+		/// <inheritdoc/>
+		public override void LockRoot(int lockKey) {
+			// For each table, recurse.
+			rootsLocked++;
+			for (int i = 0; i < compositeTables.Length; ++i) {
+				compositeTables[i].LockRoot(lockKey);
+			}
+		}
+
+		/// <inheritdoc/>
+		public override void UnlockRoot(int lockKey) {
+			// For each table, recurse.
+			rootsLocked--;
+			for (int i = 0; i < compositeTables.Length; ++i) {
+				compositeTables[i].UnlockRoot(lockKey);
+			}
+		}
+
+		/// <inheritdoc/>
+		public override bool HasRootsLocked {
+			get { return rootsLocked != 0; }
+		}
+
+		// ---------- Implemented from IRootTable ----------
+
+		/// <inheritdoc/>
 		public bool Equals(IRootTable table) {
 			return (this == table);
+			//    return true;
 		}
 	}
 }

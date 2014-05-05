@@ -1,5 +1,5 @@
-﻿// 
-//  Copyright 2014  Deveel
+// 
+//  Copyright 2010  Deveel
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -13,157 +13,241 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
+
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 
 using Deveel.Data.Types;
 
 namespace Deveel.Data.DbSystem {
+	/// <summary>
+	/// Defines meta information about a table.
+	/// </summary>
+	/// <remarks>
+	/// Every table in the database has a definition that describes how it is stored 
+	/// on disk, the column definitions, primary keys/foreign keys, and any 
+	/// check constraints.
+	/// </remarks>
 	[Serializable]
-	public class DataTableInfo : IEnumerable<DataColumnInfo> {
-		private readonly List<DataColumnInfo> columns;
-		private readonly Dictionary<string, int> columnNamesCache;
- 
-		public DataTableInfo(string schemaName, string name)
-			: this(new ObjectName(new ObjectName(schemaName), name)) {
-		}
+	public sealed class DataTableInfo : ICloneable {
+		/// <summary>
+		///  A TableName object that represents this data table info.
+		/// </summary>
+		private readonly ObjectName tableName;
 
-		public DataTableInfo(ObjectName name) {
-			if (name == null)
-				throw new ArgumentNullException("name");
+		/// <summary>
+		/// The type of table this is (this is the class name of the object that
+		/// maintains the underlying database files).
+		/// </summary>
+		private string tableTypeName;
 
-			Name = name;
+		/// <summary>
+		/// The list of DataColumnInfo objects that are the definitions of each
+		/// column input the table.
+		/// </summary>
+		private List<DataColumnInfo> columns;
 
+		/// <summary>
+		/// Set to true if this data table info is immutable.
+		/// </summary>
+		private bool readOnly;
+
+		///<summary>
+		///</summary>
+		public DataTableInfo(ObjectName tableName) {
+			if (tableName == null)
+				throw new ArgumentNullException("tableName");
+
+			this.tableName = tableName;
 			columns = new List<DataColumnInfo>();
-			columnNamesCache = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
+			tableTypeName = "";
+			readOnly = false;
 		}
 
-		public ObjectName Name { get; private set; }
-
-		public bool IsReadOnly { get; set; }
-
-		public DataColumnInfo this[int offset] {
-			get { return columns[offset]; }
+		public DataTableInfo(string schema, string tableName)
+			: this(new ObjectName(new ObjectName(schema), tableName)) {
 		}
 
-		public virtual int ColumnCount {
-			get { return columns.Count; }
+		public DataTableInfo(string tableName)
+			: this(ObjectName.Parse(tableName)) {
 		}
 
-		public DataColumnInfo NewColumn(string name, DataType type) {
-			AssertNotReadOnly();
+		public bool IsReadOnly {
+			get { return readOnly; }
+			set { readOnly = value; }
+		}
 
-			if (String.IsNullOrEmpty(name))
+		private void CheckMutable() {
+			if (IsReadOnly) {
+				throw new ApplicationException("Tried to mutate immutable object.");
+			}
+		}
+
+		public void Dump(TextWriter output) {
+			for (int i = 0; i < ColumnCount; ++i) {
+				this[i].Dump(output);
+				output.WriteLine();
+			}
+		}
+
+
+		public string ResolveColumnName(string columnName, bool ignoreCase) {
+			// Can we resolve this to a column input the table?
+			string found = null;
+			foreach (DataColumnInfo columnInfo in columns) {
+				// If this is a column name (case ignored) then set the column
+				// to the correct cased name.
+				if (String.Compare(columnInfo.Name, columnName, ignoreCase) == 0) {
+					if (found != null)
+						throw new ApplicationException("Ambiguous reference to column '" + columnName + "'");
+
+					found = columnInfo.Name;
+				}
+			}
+
+			if (found != null)
+				return found;
+
+			throw new ApplicationException("Column '" + columnName + "' not found");
+		}
+
+		internal void ResolveColumnsInArray(IDatabaseConnection connection,IList<string> list) {
+			bool ignoreCase = connection.IsInCaseInsensitive;
+			for (int i = 0; i < list.Count; ++i) {
+				string colName = list[i];
+				list[i] = ResolveColumnName(colName, ignoreCase);
+			}
+		}
+
+		internal void AddColumn(DataColumnInfo column) {
+			CheckMutable();
+			column.TableInfo = this;
+			columns.Add(column);
+		}
+
+		public DataColumnInfo AddColumn(string name, DataType type, bool notNull) {
+			DataColumnInfo column = AddColumn(name, type);
+			column.IsNotNull = notNull;
+			return column;
+		}
+
+		public DataColumnInfo AddColumn(string name, DataType type) {
+			CheckMutable();
+
+			if (name == null)
 				throw new ArgumentNullException("name");
 			if (type == null)
 				throw new ArgumentNullException("type");
 
-			if (HasColumn(name))
-				throw new InvalidOperationException(String.Format("A column named {0} already exists in table {1}.", name, Name));
+			foreach (DataColumnInfo column in columns) {
+				if (column.Name.Equals(name))
+					throw new ArgumentException("Column '" + name + "' already exists in table '" + tableName + "'.");
+			}
 
-			return new DataColumnInfo(this, name, type);
+			DataColumnInfo newColumn = new DataColumnInfo(this, name, type);
+			columns.Add(newColumn);
+			return newColumn;
 		}
 
-		private void AssertNotReadOnly() {
-			if (IsReadOnly)
-				throw new InvalidOperationException(String.Format("Table {0} is read-only.", Name));
+		/// <summary>
+		/// Gets the name of the schema the table belongs to if any,
+		/// otherwise returns <see cref="String.Empty"/>.
+		/// </summary>
+		public string Schema {
+			get { return tableName.Parent != null ? tableName.Parent.Name : ""; }
 		}
 
-		public void AddColumn(DataColumnInfo column) {
-			if (column == null)
-				throw new ArgumentNullException("column");
-
-			if (!Equals(column.TableInfo))
-				throw new ArgumentException("The column was not generated by this table.", "column");
-
-			columns.Add(column);
+		/// <summary>
+		/// Gets the name of the table.
+		/// </summary>
+		public string Name {
+			get { return tableName.Name; }
 		}
 
-		public DataColumnInfo AddColumn(string name, DataType type) {
-			return AddColumn(name, type, true);
+		/// <summary>
+		/// Gets the <see cref="TableName"/> object representing the full name 
+		/// of the table.
+		/// </summary>
+		public ObjectName TableName {
+			get { return tableName; }
 		}
 
-		public DataColumnInfo AddColumn(string name, DataType type, bool nullable) {
-			var column = NewColumn(name, type);
-			column.IsNullable = nullable;
-			AddColumn(column);
-			return column;
+		public int ColumnCount {
+			get { return columns.Count; }
 		}
 
-		public virtual int IndexOfColumn(string columnName) {
-			if (String.IsNullOrEmpty(columnName))
-				throw new ArgumentNullException("columnName");
+		public DataColumnInfo this[int column] {
+			get { return columns[column]; }
+		}
 
-			int offset;
-			if (!columnNamesCache.TryGetValue(columnName, out offset)) {
-				offset = -1;
+		public int FindColumnName(string columnName) {
+			int size = ColumnCount;
+			for (int i = 0; i < size; ++i) {
+				if (this[i].Name.Equals(columnName)) {
+					return i;
+				}
+			}
+			return -1;
+		}
 
-				for (int i = 0; i < columns.Count; i++) {
-					var column = columns[i];
-					if (columnName.Equals(column.Name, StringComparison.InvariantCultureIgnoreCase)) {
-						offset = i;
-						break;
-					}
+		private Dictionary<string, int> colNameLookup;
+		private readonly object colLookupLock = new Object();
+
+		///<summary>
+		/// A faster way to find a column index given a string column name.
+		///</summary>
+		///<param name="columnName"></param>
+		/// <remarks>
+		/// This caches column name -> column index input a hashtable.
+		/// </remarks>
+		///<returns></returns>
+		public int FastFindColumnName(string columnName) {
+			lock (colLookupLock) {
+				if (colNameLookup == null)
+					colNameLookup = new Dictionary<string, int>(30);
+
+				int index;
+				if (!colNameLookup.TryGetValue(columnName, out index)) {
+					index = FindColumnName(columnName);
+					colNameLookup[columnName] = index;
 				}
 
-				if (offset != -1)
-					columnNamesCache[columnName] = offset;
-			}
-
-			return offset;
-		}
-
-		public int IndexOfColumn(ObjectName columnName) {
-			if (columnName.Parent != null &&
-			    !columnName.Parent.Equals(Name))
-				return -1;
-
-			return IndexOfColumn(columnName.Name);
-		}
-
-		public bool HasColumn(string columnName) {
-			return IndexOfColumn(columnName) != -1;
-		}
-
-		public ObjectName ResolveColumnName(string columnName) {
-			return new ObjectName(Name, columnName);
-		}
-
-		public int[] IndexOfColumns(ObjectName[] columnNames) {
-			var index = new int[columnNames.Length];
-			for (int i = 0; i < columnNames.Length; i++) {
-				index[i] = IndexOfColumn(columnNames[i]);
-			}
-
-			return index;
-		}
-
-		public DataType GetColumnType(ObjectName columnName) {
-			var index = IndexOfColumn(columnName);
-			if (index == -1)
-				return null;
-
-			return columns[index].DataType;
-		}
-
-		internal void CopyColumnsTo(DataTableInfo tableInfo) {
-			foreach (var column in columns) {
-				var newColumn = new DataColumnInfo(tableInfo, column.Name, column.DataType) {
-					DefaultExpression = column.DefaultExpression,
-					IsNullable = column.IsNullable
-				};
-
-				tableInfo.AddColumn(newColumn);
+				return index;
 			}
 		}
 
-		public IEnumerator<DataColumnInfo> GetEnumerator() {
-			return columns.GetEnumerator();
+
+		/// <summary>
+		/// Copies the object, excluding the columns and the constraints
+		/// contained in it.
+		/// </summary>
+		/// <returns></returns>
+		public DataTableInfo NoColumnClone() {
+			DataTableInfo info = new DataTableInfo(tableName);
+			info.tableTypeName = tableTypeName;
+			return info;
 		}
 
-		IEnumerator IEnumerable.GetEnumerator() {
-			return GetEnumerator();
+
+
+		object ICloneable.Clone() {
+			return Clone();
+		}
+
+		public DataTableInfo Clone() {
+			return Clone(tableName);
+		}
+
+		public DataTableInfo Clone(ObjectName newTableName) {
+			DataTableInfo clone = new DataTableInfo(newTableName);
+			clone.tableTypeName = (string)tableTypeName.Clone();
+			clone.columns = new List<DataColumnInfo>();
+			foreach (DataColumnInfo column in columns) {
+				clone.columns.Add(column.Clone());
+			}
+
+			return clone;
 		}
 	}
 }

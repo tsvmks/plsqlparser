@@ -85,7 +85,7 @@ namespace Deveel.Data.DbSystem {
 
 					// Add this column to the data table info of this table.
 					var sourceColumn = curTableInfo[n];
-					var newColumn = NewColumn(sourceColumn.Name, sourceColumn.DataType);
+					var newColumn = new DataColumnInfo(this, sourceColumn.Name, sourceColumn.DataType);
 					newColumn.DefaultExpression = sourceColumn.DefaultExpression;
 					newColumn.IsNullable = sourceColumn.IsNullable;
 					AddColumn(newColumn);

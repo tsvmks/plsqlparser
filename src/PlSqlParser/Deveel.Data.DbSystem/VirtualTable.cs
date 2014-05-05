@@ -1,5 +1,5 @@
-﻿// 
-//  Copyright 2014  Deveel
+// 
+//  Copyright 2010  Deveel
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,22 +16,40 @@
 using System;
 using System.Collections.Generic;
 
+using Deveel.Math;
+
 namespace Deveel.Data.DbSystem {
-	class VirtualTable : JoinedTable {
+	/// <summary>
+	/// Representation of a table whose rows are actually physically 
+	/// stored in another table.
+	/// </summary>
+	/// <remarks>
+	/// In other words, this table just stores pointers to rows in other tables.
+	/// <para>
+	/// We use the VirtualTable to represent temporary tables created from select,
+	/// join, etc operations.
+	/// </para>
+	/// <para>
+	/// An important note about virtual tables:  performing a 'select' operation
+	/// on a virtual table, unlike a <see cref="DataTable"/> that permanently stores 
+	/// information about column cell relations resolves column relations 
+	/// between the sub-set at select time. This involves asking the tables 
+	/// parent(s) for a scheme to describe relations in a sub-set.
+	/// </para>
+	/// </remarks>
+	public class VirtualTable : JoinedTable {
+
+		/// <summary>
+		/// Array of IntegerVectors that represent the rows taken from the given parents.
+		/// </summary>
 		private IList<long>[] rowList;
-		private long rowCount;
 
-		public VirtualTable(Table[] tables)
-			: base(tables) {
-		}
+		/// <summary>
+		/// The number of rows in the table.
+		/// </summary>
+		private int rowCount;
 
-		public VirtualTable(Table table)
-			: base(table) {
-		}
-
-		protected VirtualTable() {
-		}
-
+		/// <inheritdoc/>
 		protected override void Init(Table[] tables) {
 			base.Init(tables);
 
@@ -42,6 +60,27 @@ namespace Deveel.Data.DbSystem {
 			}
 		}
 
+		/// <summary>
+		/// Constructs the <see cref="VirtualTable"/> with a list of tables 
+		/// that this virtual table is a sub-set or join of.
+		/// </summary>
+		/// <param name="tables"></param>
+		public VirtualTable(Table[] tables)
+			: base(tables) {
+		}
+
+		public VirtualTable(Table table)
+			: base(table) {
+		}
+
+		protected VirtualTable()
+			: base() {
+		}
+
+		/// <summary>
+		/// Returns the list of <see cref="IList{T}"/> that represents the rows 
+		/// that this <see cref="VirtualTable"/> references.
+		/// </summary>
 		protected IList<long>[] ReferenceRows {
 			get { return rowList; }
 		}
@@ -51,31 +90,52 @@ namespace Deveel.Data.DbSystem {
 			get { return rowCount; }
 		}
 
-		internal void Set(ITable table, IEnumerable<long> rows) {
+
+		/// <summary>
+		/// Sets the rows in this table.
+		/// </summary>
+		/// <param name="table"></param>
+		/// <param name="rows"></param>
+		/// <remarks>
+		/// We should search for the <paramref name="table"/> in the 
+		/// reference_list however we don't for efficiency.
+		/// </remarks>
+		internal void Set(Table table, IList<long> rows) {
 			rowList[0] = new List<long>(rows);
-			rowCount = rowList[0].Count;
+			rowCount = rows.Count;
 		}
 
-		internal void Set(Table[] tables, IEnumerable<long>[] rows) {
+		/// <summary>
+		/// This is used in a join to set a list or joined rows and tables.
+		/// </summary>
+		/// <param name="tables"></param>
+		/// <param name="rows"></param>
+		/// <remarks>
+		/// The <paramref name="tables"/> array should be an exact mirror of the 
+		/// <i>reference_list</i>. The <paramref name="rows"/> array contains the 
+		/// rows to add for each respective table. The given <see cref="IntegerVector"/> 
+		/// objects should have identical lengths.
+		/// </remarks>
+		internal void Set(Table[] tables, IList<long>[] rows) {
 			for (int i = 0; i < tables.Length; ++i) {
 				rowList[i] = new List<long>(rows[i]);
 			}
 			if (rows.Length > 0) {
-				rowCount = rowList[0].Count;
+				rowCount = rows[0].Count;
 			}
+		}
+
+		protected override long ResolveRowForTableAt(long rowNumber, int tableNum) {
+			return rowList[tableNum][(int)rowNumber];
 		}
 
 		protected override void ResolveAllRowsForTableAt(IList<long> rowSet, int tableNum) {
 			IList<long> curRowList = rowList[tableNum];
 			for (int n = rowSet.Count - 1; n >= 0; --n) {
 				long aa = rowSet[n];
-				long bb = curRowList[(int) aa];
+				long bb = curRowList[(int)aa];
 				rowSet[n] = bb;
 			}
-		}
-
-		protected override long ResolveRowForTableAt(long rowNumber, int tableNum) {
-			return rowList[tableNum][(int)rowNumber];
 		}
 	}
 }

@@ -1,5 +1,5 @@
-// 
-//  Copyright 2010  Deveel
+﻿// 
+//  Copyright 2014  Deveel
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ namespace Deveel.Data.DbSystem {
 	/// <b>null</b> fields) that is what the result is based on. It is 
 	/// then possible to merge in tables that are ancestors.
 	/// </remarks>
-	public class OuterTable : VirtualTable, IRootTable {
+	class OuterTable : VirtualTable, IRootTable {
 		/// <summary>
 		/// The merged rows.
 		/// </summary>
@@ -39,7 +39,6 @@ namespace Deveel.Data.DbSystem {
 		private int outerRowCount;
 
 		public OuterTable(Table inputTable) {
-
 			RawTableInformation baseTable = inputTable.ResolveToRawTable(new RawTableInformation());
 			Table[] tables = baseTable.GetTables();
 			IList<long>[] rows = baseTable.GetRows();
@@ -117,19 +116,19 @@ namespace Deveel.Data.DbSystem {
 
 		/// <inheritdoc/>
 		public override DataObject GetValue(int column, long row) {
-			int tableNum = ColumnTable[column];
-			Table parent_table = ReferenceTables[tableNum];
+			int tableNum = JoinedTableInfo.IndexOfTable(column);
+			Table parentTable = ReferenceTables[tableNum];
 			if (row >= outerRowCount) {
-				row = ReferenceRows[tableNum][(int)(row - outerRowCount)];
-				return parent_table.GetValue(ColumnFilter[column], row);
+				row = ReferenceRows[tableNum][(int)row - outerRowCount];
+				return parentTable.GetValue(JoinedTableInfo.AdjustColumnOffset(column), row);
 			}
 
 			if (outerRows[tableNum] == null)
 				// Special case, handling outer entries (NULL)
-				return new DataObject(GetColumnInfo(column).DataType, null);
+				return new DataObject(TableInfo[column].DataType, null);
 
 			row = outerRows[tableNum][(int)row];
-			return parent_table.GetValue(ColumnFilter[column], row);
+			return parentTable.GetValue(JoinedTableInfo.AdjustColumnOffset(column), row);
 		}
 
 		/// <inheritdoc/>

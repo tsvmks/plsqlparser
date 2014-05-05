@@ -234,5 +234,14 @@ namespace Deveel.Data.Types {
 		public static DataType Query() {
 			return new QueryType();
 		}
+
+		public static DataType FromType(Type type) {
+			if (type == typeof (bool))
+				return Boolean();
+			if (type == typeof (string))
+				return String();
+
+			throw new NotSupportedException();
+		}
 	}
 }

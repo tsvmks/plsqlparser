@@ -1,5 +1,5 @@
-// 
-//  Copyright 2010  Deveel
+﻿// 
+//  Copyright 2014  Deveel
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,17 +16,8 @@
 using System;
 using System.Collections.Generic;
 
-using Deveel.Math;
-
 namespace Deveel.Data.DbSystem {
-	/// <summary>
-	/// A table that is the cartesian product of two tables.
-	/// </summary>
-	/// <remarks>
-	/// Provides better memory-use and efficiency than a materialized table 
-	/// backed by a <see cref="VirtualTable"/>.
-	/// </remarks>
-	public sealed class NaturallyJoinedTable : JoinedTable {
+	class NaturallyJoinedTable : JoinedTable {
 		// The row counts of the left and right tables.
 		private readonly long leftRowCount, rightRowCount;
 
@@ -40,7 +31,7 @@ namespace Deveel.Data.DbSystem {
 		///<param name="left"></param>
 		///<param name="right"></param>
 		public NaturallyJoinedTable(Table left, Table right) {
-			base.Init(new Table[] { left, right });
+			Init(new Table[] { left, right });
 
 			leftRowCount = left.RowCount;
 			rightRowCount = right.RowCount;
@@ -58,11 +49,6 @@ namespace Deveel.Data.DbSystem {
 
 		}
 
-		/// <summary>
-		/// Creates a lookup list for rows in the given table.
-		/// </summary>
-		/// <param name="t"></param>
-		/// <returns></returns>
 		private static IList<long> CreateLookupRowList(ITable t) {
 			List<long> ivec = new List<long>();
 			IEnumerator<long> en = t.GetRowEnumerator();
@@ -73,42 +59,30 @@ namespace Deveel.Data.DbSystem {
 			return ivec;
 		}
 
-		/// <summary>
-		/// Given a row index between 0 and left table row count, this will return a
-		/// row index into the left table's row domain.
-		/// </summary>
-		/// <param name="rowIndex"></param>
-		/// <returns></returns>
 		private long GetLeftRowIndex(long rowIndex) {
 			if (leftIsSimpleEnum)
 				return rowIndex;
 
-			return leftSet[(int)rowIndex];
+			return leftSet[(int) rowIndex];
 		}
 
-		/// <summary>
-		/// Given a row index between 0 and right table row count, this will return a
-		/// row index into the right table's row domain.
-		/// </summary>
-		/// <param name="rowIndex"></param>
-		/// <returns></returns>
 		private long GetRightRowIndex(long rowIndex) {
 			if (rightIsSimpleEnum)
 				return rowIndex;
 
-			return rightSet[(int)rowIndex];
+			return rightSet[(int) rowIndex];
 		}
 
 		public override long RowCount {
 			get {
 				// Natural join row count is (left table row count * right table row count)
-				return leftRowCount*rightRowCount;
+				return leftRowCount * rightRowCount;
 			}
 		}
 
 		protected override long ResolveRowForTableAt(long rowNumber, int tableNum) {
 			if (tableNum == 0)
-				return GetLeftRowIndex(rowNumber/rightRowCount);
+				return GetLeftRowIndex(rowNumber / rightRowCount);
 			return GetRightRowIndex(rowNumber % rightRowCount);
 		}
 
@@ -117,13 +91,13 @@ namespace Deveel.Data.DbSystem {
 			for (int n = rowSet.Count - 1; n >= 0; --n) {
 				long aa = rowSet[n];
 				// Reverse map row index to parent domain
-				long parent_row;
+				long parentRow;
 				if (pickRightTable) {
-					parent_row = GetRightRowIndex(aa % rightRowCount);
+					parentRow = GetRightRowIndex(aa % rightRowCount);
 				} else {
-					parent_row = GetLeftRowIndex(aa / rightRowCount);
+					parentRow = GetLeftRowIndex(aa / rightRowCount);
 				}
-				rowSet[n] = parent_row;
+				rowSet[n] = parentRow;
 			}
 		}
 	}

@@ -29,16 +29,22 @@ namespace Deveel.Data.Query {
 		}
 
 		public override ITable Evaluate(IQueryContext context) {
-			ITable t = Child.Evaluate(context);
+			Table t = (Table) Child.Evaluate(context);
 
 			int sz = originalColumns.Length;
 			int[] colMap = new int[sz];
 
 			for (int i = 0; i < sz; ++i) {
-				colMap[i] = t.TableInfo.IndexOfColumn(originalColumns[i]);
+				int mapped = t.FindFieldName(originalColumns[i]);
+				if (mapped == -1)
+					throw new InvalidOperationException(String.Format("Column {0} was not found in table {1} when subsetting.", originalColumns[i], t.TableInfo.Name));
+
+				colMap[i] = mapped;
 			}
 
-			return new SubsetColumnTable((Table)t, colMap, newColumnNames);
+			var subsetTable = new SubsetColumnTable((Table)t);
+			subsetTable.SetColumnMap(colMap, newColumnNames);
+			return subsetTable;
 		}
 
 		// ---------- Set methods ----------
