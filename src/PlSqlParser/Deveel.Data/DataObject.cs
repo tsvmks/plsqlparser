@@ -48,6 +48,16 @@ namespace Deveel.Data {
 			return new DataObject(new ArrayType(), expressions);
 		}
 
+		public bool ValuesEqual(DataObject obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (DataType.IsComparable(obj.DataType)) {
+				return CompareTo(obj) == 0;
+			}
+			return false;
+		}
+
 		public bool IsComparableTo(DataObject obj) {
 			return DataType.IsComparable(obj.DataType);
 		}
@@ -132,7 +142,7 @@ namespace Deveel.Data {
 		}
 
 		public override string ToString() {
-			return IsNull ? "NULL" : Value.ToString();
+			return IsNull ? "NULL" : DataType.ValueToString(Value);
 		}
 
 		public DataObject Concat(DataObject value) {
@@ -216,7 +226,12 @@ namespace Deveel.Data {
 		}
 
 		public DataObject Less(DataObject value) {
-			throw new NotImplementedException();
+			// Check the types are comparable
+			if (IsComparableTo(value) && !IsNull && !value.IsNull)
+				return Boolean(CompareToNoNulls(value) < 0);
+
+			// Not comparable types so return null
+			return BooleanNull;
 		}
 
 		public DataObject Multiply(DataObject value) {
@@ -250,6 +265,23 @@ namespace Deveel.Data {
 
 		public string ToStringValue() {
 			return Value.ToString();
+		}
+
+		public static DataObject From(object obj) {
+			if (obj is string)
+				return String((string) obj);
+			if (obj is bool)
+				return Boolean((bool) obj);
+
+			throw new NotSupportedException();
+		}
+
+		public static DataObject String(string s) {
+			return String(new StringObject(s));
+		}
+
+		public static DataObject String(IStringObject s) {
+			return new DataObject(PrimitiveTypes.String(), s);
 		}
 	}
 }

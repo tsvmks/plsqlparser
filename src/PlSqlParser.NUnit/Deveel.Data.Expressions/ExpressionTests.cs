@@ -1,6 +1,9 @@
 ﻿using System;
 
+using Deveel.Data.Query;
 using Deveel.Data.Sql;
+
+using Microsoft.SqlServer.Server;
 
 using NUnit.Framework;
 
@@ -71,6 +74,36 @@ namespace Deveel.Data.Expressions {
 			var boolResult = result.ToBoolean();
 			Assert.IsNotNull(boolResult);
 			Assert.IsTrue(boolResult.Value);
+		}
+
+		[Test]
+		public void AnyNoEqual() {
+			var exp = SqlParser.SqlExpression("3 <> ANY (58, 1.2)");
+			Assert.IsNotNull(exp);
+			Assert.IsInstanceOf<AnyExpression>(exp);
+
+			var result = exp.Evaluate();
+			Assert.IsNotNull(result);
+			Assert.IsTrue(result.DataType.IsPrimitive);
+			Assert.AreEqual(DataObject.BooleanTrue, result);
+		}
+
+		[Test]
+		public void AndOperatorBreak() {
+			var exp = SqlParser.SqlExpression("(32 + 23 > 12) AND 45 > 12 AND 11 != 12");
+			Assert.IsNotNull(exp);
+
+			Console.Out.WriteLine(exp.ToString());
+
+			var exps = exp.BreakByOperator(Operator.And);
+
+			int i = 0;
+			foreach (var expression in exps) {
+				Console.Out.Write("[{0}] = ", ++i);
+				Console.Out.WriteLine(expression);
+			}
+
+			Assert.AreEqual(4, exps.Count);
 		}
 	}
 }

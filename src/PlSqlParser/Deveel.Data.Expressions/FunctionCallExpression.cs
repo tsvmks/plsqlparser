@@ -16,6 +16,8 @@
 using System;
 using System.Collections.Generic;
 
+using Deveel.Data.DbSystem;
+
 namespace Deveel.Data.Expressions {
 	public sealed class FunctionCallExpression : Expression {
 		public FunctionCallExpression(ObjectName functionName, IEnumerable<Expression> arguments) 
@@ -32,10 +34,14 @@ namespace Deveel.Data.Expressions {
 
 		public ObjectName FunctionName { get; private set; }
 
+		public IEnumerable<Expression> Arguments { get; private set; }
+
 		public override ExpressionType ExpressionType {
 			get { return ExpressionType.Call; }
 		}
 
-		public IEnumerable<Expression> Arguments { get; private set; }
+		public bool IsAggregate(IQueryContext context) {
+			return false;
+		}
 	}
 }

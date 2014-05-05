@@ -20,7 +20,7 @@ using System.Text;
 namespace Deveel.Data {
 	[Serializable]
 	[DebuggerDisplay("{FullName}")]
-	public sealed class ObjectName : IEquatable<ObjectName>, IComparable<ObjectName> {
+	public sealed class ObjectName : IEquatable<ObjectName>, IComparable<ObjectName>, ICloneable {
 		public const string GlobName = "*";
 
 		public ObjectName(string name) 
@@ -151,6 +151,14 @@ namespace Deveel.Data {
 				code ^= Parent.GetHashCode();
 
 			return code;
+		}
+
+		public ObjectName Clone() {
+			return new ObjectName(Parent, Name);
+		}
+
+		object ICloneable.Clone() {
+			return Clone();
 		}
 	}
 }

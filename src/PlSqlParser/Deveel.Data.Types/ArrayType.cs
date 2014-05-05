@@ -14,11 +14,30 @@
 //    limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Text;
+
+using Deveel.Data.Expressions;
 
 namespace Deveel.Data.Types {
 	public sealed class ArrayType : DataType {
 		public ArrayType()
 			: base("ARRAY", SqlType.Array) {
+		}
+
+		internal override string ValueToString(object obj) {
+			var exps = (IEnumerable<Expression>) obj;
+			var list = new List<Expression>(exps);
+
+			var sb = new StringBuilder();
+			for (int i = 0; i < list.Count; i++) {
+				list[i].DumpTo(sb);
+
+				if (i < list.Count - 1)
+					sb.Append(", ");
+			}
+
+			return sb.ToString();
 		}
 	}
 }

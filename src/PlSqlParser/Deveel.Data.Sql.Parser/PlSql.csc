@@ -219,6 +219,14 @@ TOKEN:
   | < S_QUOTED_IDENTIFIER: "\"" (~["\n","\r","\""])* "\"" >
 }
 
+TOKEN_MGR_DECLS: {
+	public List<Token> tokenHistory = new List<Token>();
+
+	void CommonTokenAction(Token token) {
+		tokenHistory.Add(token);
+	}
+}
+
 /* Represents a PLSQL code block. */
 void CompilationUnit():
 {}
@@ -230,7 +238,7 @@ void CompilationUnit():
   | "CALL" ProcedureCall()
 }
 
-VariableBind BindVariable():
+ObjectName BindVariable():
 { Token t1 = null, t2 = null; String s = null; }
 {
 	(
@@ -238,7 +246,7 @@ VariableBind BindVariable():
 		| ":" ( t1 = <S_NUMBER> { s = t1.image; }
 		| t1 = <S_IDENTIFIER> ["." t2 = <S_IDENTIFIER>] { s = t1.image; if (t2 != null) s += "." + t2.image; } )
   )
-  { return new VariableBind(s); }
+  { return ParserUtil.ObjectName(s); }
 }
 
 void AlterSession():
@@ -956,7 +964,7 @@ Expression PlSqlUnaryExpression():
 Expression PlSqlPrimaryExpression():
 { Expression exp = null, otherExp = null;
   ObjectName refName = null;
-  VariableBind varBind = null;
+  ObjectName varBind = null;
   TableSelectExpression selectExp = null;
   Token t; }
 {
@@ -1287,11 +1295,11 @@ void ColumnName():
     <S_IDENTIFIER>
 }
 
-Expression WhereClause():
+FilterExpression WhereClause():
 { Expression exp; }
 {
     "WHERE" exp = SQLExpression()
-	{ return  exp; }
+	{ return new FilterExpression(exp); }
 }
 
 void ConnectClause():
@@ -1315,11 +1323,11 @@ void GroupByClause(ICollection<ByColumn> columns):
 	}
 }
 
-Expression HavingClause():
+FilterExpression HavingClause():
 { Expression exp; }
 {
     "HAVING" exp = SQLExpression()
-	{ return (exp); }
+	{ return new FilterExpression(exp); }
 }
 
 void OrderByClause(ICollection<ByColumn> columns):
@@ -1385,20 +1393,20 @@ Expression ExistsClause():
 }
 
 Expression SQLRelationalExpression():
-{ Expression exp = null; }
+{ Expression exp = null; IEnumerable<Expression> array = null; }
 {
     /* Only after looking past "(", Expression() and "," we will know that
        it is expression list */
 (
     (LOOKAHEAD("(" SQLSimpleExpression() ",")
-     "(" SQLExpressionList() ")"
+     "(" array = SQLExpressionList() { exp = Expression.Array(array); } ")"
 |
     (["PRIOR"] exp = SQLSimpleExpression()))
 
     /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
    ( exp = SQLRelationalOperatorExpression(exp) |  
-     LOOKAHEAD(2) (SQLInClause()) |  
-	 LOOKAHEAD(2) (SQLBetweenClause()) |  
+     LOOKAHEAD(2) (exp = SQLInClause()) |  
+	 LOOKAHEAD(2) (exp = SQLBetweenClause()) |  
 	 LOOKAHEAD(2) (exp = SQLLikeClause(exp)) |  
 	 IsNullClause(null)
    )?
@@ -1417,7 +1425,8 @@ List<Expression> SQLExpressionList():
 
 Expression SQLRelationalOperatorExpression(Expression exp):
 { Expression exp1 = null; ExpressionType op;
-  TableSelectExpression selectExp = null; }
+  TableSelectExpression selectExp = null; bool any = false; bool all = false;
+  List<Expression> expList = null; }
 {
 
     op = Relop()
@@ -1425,24 +1434,35 @@ Expression SQLRelationalOperatorExpression(Expression exp):
     /* Only after seeing an ANY/ALL or "(" followed by a SubQuery() we can
     determine that is is a sub-query
     */
-    (   LOOKAHEAD("ANY" | "ALL" | "(" "SELECT")
-        (["ALL" | "ANY"] "(" selectExp = SubQuery() ")" { exp1 = Expression.Query(selectExp); } )
+    (   LOOKAHEAD("ANY" | "ALL" | "(" )
+        (
+			[ "ALL" { all = true; } | "ANY" { any = true; } ]
+		   "(" 
+		   ( LOOKAHEAD("SELECT")
+		     selectExp = SubQuery() { exp1 = Expression.Query(selectExp); } | 
+			 expList = SQLExpressionList() { exp1 = Expression.Array(expList); } )
+		   ")"
+		)
         |
         ["PRIOR"] exp1 = SQLSimpleExpression()
     )
-	{ return Expression.Binary(exp, op, exp1); }
+	{ if (any) return Expression.Any(exp, op, exp1);
+	  if (all) return Expression.All(exp, op, exp1);
+	  return Expression.Binary(exp, op, exp1); }
 }
 
-void SQLInClause():
-{}
+Expression SQLInClause():
+{ Expression exp = null; }
 {
     ["NOT"] "IN" "(" (LOOKAHEAD(3) SubQuery() | SQLExpressionList()) ")"
+	{ return exp; }
 }
 
-void SQLBetweenClause():
-{}
+Expression SQLBetweenClause():
+{ Expression exp = null; }
 {
     ["NOT"] "BETWEEN" SQLSimpleExpression() "AND" SQLSimpleExpression()
+	{ return exp; }
 }
 
 Expression SQLLikeClause(Expression exp):
@@ -1494,7 +1514,7 @@ Expression SQLUnaryExpression():
 Expression SQLPrimaryExpression():
 { Expression exp = null; Token t; TableSelectExpression selectExpr = null;
   ObjectName name = null;
-  VariableBind varBind = null; }
+  ObjectName varBind = null; }
 {
   (
     t = <S_NUMBER> { exp = Expression.Constant(ParserUtil.Number(t.image)); }

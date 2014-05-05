@@ -39,6 +39,20 @@ namespace Deveel.Data.Types {
 
 		public byte Scale { get; private set; }
 
+		public override bool Equals(object obj) {
+			var other = obj as NumericType;
+			if (other == null)
+				return false;
+
+			return SqlType == other.SqlType &&
+			       Size == other.Size &&
+			       Scale == other.Scale;
+		}
+
+		public override int GetHashCode() {
+			return base.GetHashCode();
+		}
+
 		private static int GetIntSize(SqlType sqlType) {
 			switch (sqlType) {
 				case SqlType.TinyInt:

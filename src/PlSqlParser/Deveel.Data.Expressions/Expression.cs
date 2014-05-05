@@ -1,4 +1,18 @@
-﻿using System;
+﻿// 
+//  Copyright 2014  Deveel
+// 
+//    Licensed under the Apache License, Version 2.0 (the "License");
+//    you may not use this file except in compliance with the License.
+//    You may obtain a copy of the License at
+// 
+//        http://www.apache.org/licenses/LICENSE-2.0
+// 
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS,
+//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//    See the License for the specific language governing permissions and
+//    limitations under the License.
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -56,10 +70,10 @@ namespace Deveel.Data.Expressions {
 		#region Factories
 
 		public static Expression Or(Expression first, Expression second) {
-			return null;
+			throw new NotImplementedException();
 		}
 
-		public static Expression And(Expression first, Expression second) {
+		public static BinaryExpression And(Expression first, Expression second) {
 			return new AndExpression(first, second);
 		}
 
@@ -82,7 +96,7 @@ namespace Deveel.Data.Expressions {
 			if (!(array.DataType is ArrayType))
 				throw new ArgumentException();
 
-			return null;
+			throw new NotImplementedException();
 		}
 
 		public static Expression Between(Expression expression, Expression min, Expression max) {
@@ -90,15 +104,15 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public static Expression NotBetween(Expression expression, Expression min, Expression max) {
-			return null;
+			throw new NotImplementedException();
 		}
 
-		public static Expression Greater(Expression first, Expression second) {
-			return null;
+		public static GreaterExpression Greater(Expression first, Expression second) {
+			return new GreaterExpression(first, second);
 		}
 
-		public static Expression Smaller(Expression first, Expression second) {
-			return null;
+		public static SmallerExpression Smaller(Expression first, Expression second) {
+			return new SmallerExpression(first, second);
 		}
 
 		public static Expression Like(Expression expression, Expression searchExpression, Expression escape) {
@@ -117,25 +131,36 @@ namespace Deveel.Data.Expressions {
 			return new MultiplyExpression(first, second);
 		}
 
+		public static AnyExpression Any(Expression first, ExpressionType subType, Expression second) {
+			return new AnyExpression(first, subType, second);
+		}
+
 		public static BinaryExpression Binary(Expression first, ExpressionType type, Expression second) {
 			if (type == ExpressionType.Equal)
 				return Equal(first, second);
 			if (type == ExpressionType.NotEqual)
 				return NotEqual(first, second);
+			if (type == ExpressionType.Smaller)
+				return Smaller(first, second);
+			if (type == ExpressionType.Greater)
+				return Greater(first, second);
 
 			if (type == ExpressionType.Add)
 				return Add(first, second);
 			if (type == ExpressionType.Multiply)
 				return Multiply(first, second);
 
-			return null;
+			if (type == ExpressionType.And)
+				return And(first, second);
+
+			throw new NotSupportedException();
 		}
 
 		public static Expression Negative(Expression expression) {
-			return null;
+			throw new NotImplementedException();
 		}
 
-		public static Expression Constant(DataObject value) {
+		public static ConstantExpression Constant(DataObject value) {
 			return new ConstantExpression(value);
 		}
 
@@ -152,15 +177,11 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public static Expression Variable(string name) {
-			return Variable(new VariableBind(name));
-		}
-
-		public static VariableExpression Variable(VariableBind name) {
-			return new VariableExpression(name);
+			return Variable(new ObjectName(name));
 		}
 
 		public static Expression Variable(ObjectName name) {
-			return Variable(new VariableBind(name.ToString()));
+			return new VariableExpression(name);
 		}
 
 		public static FunctionCallExpression FunctionCall(Expression obj, ObjectName functionName, IEnumerable<Expression> arguments) {
@@ -172,7 +193,7 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public static FunctionCallExpression FunctionCall(ObjectName functionName, IEnumerable<FunctionArgument> args) {
-			return null;
+			throw new NotImplementedException();
 		}
 
 		public static FunctionCallExpression FunctionCall(string functionName, IEnumerable<FunctionArgument> args) {
@@ -206,13 +227,15 @@ namespace Deveel.Data.Expressions {
 		}
 
 		public override string ToString() {
-			var dump = new ExpressionStringDump();
-			return dump.ToString(this);
+			var builder = new StringBuilder();
+			var dump = new ExpressionStringDump(builder);
+			dump.Dump(this);
+			return builder.ToString();
 		}
 
 		internal void DumpTo(StringBuilder builder) {
 			var dump = new ExpressionStringDump(builder);
-			dump.ToString(this);
+			dump.Dump(this);
 		}
 
 		#region ExpressionStringDump
@@ -224,18 +247,32 @@ namespace Deveel.Data.Expressions {
 				this.builder = builder;
 			}
 
-			public ExpressionStringDump()
-				: this(new StringBuilder()) {
-			}
-
-			protected override Expression Visit(Expression exp) {
-				exp.DumpToString(builder);
-				return base.Visit(exp);
-			}
-
-			public string ToString(Expression expression) {
+			public void Dump(Expression expression) {
 				Visit(expression);
-				return builder.ToString();
+			}
+
+			protected override Expression VisitBinary(BinaryExpression expression) {
+				expression.First.DumpTo(builder);
+				builder.AppendFormat(" {0} ", expression.Operator.AsString());
+				expression.Second.DumpTo(builder);
+				return expression;
+			}
+
+			protected override Expression VisitConstant(ConstantExpression expression) {
+				builder.Append(expression.Value);
+				return expression;
+			}
+
+			protected override SubsetExpression VisitSubset(SubsetExpression expression) {
+				builder.Append("(");
+				expression.Operand.DumpTo(builder);
+				builder.Append(")");
+				return expression;
+			}
+
+			protected override Expression VisitVariable(VariableExpression expression) {
+				builder.AppendFormat(":{0}", expression.VariableName);
+				return expression;
 			}
 		}
 
@@ -243,6 +280,29 @@ namespace Deveel.Data.Expressions {
 
 		public static SubQueryExpression Query(TableSelectExpression expression) {
 			return new SubQueryExpression(expression);
+		}
+
+		public static Expression Operator(DataObject first, Operator op, DataObject second) {
+			if (op == Expressions.Operator.Add)
+				return Add(Constant(first), Constant(second));
+
+			if (op == Expressions.Operator.Equal)
+				return Equal(Constant(first), Constant(second));
+			if (op == Expressions.Operator.NotEqual)
+				return NotEqual(Constant(first), Constant(second));
+
+			if (op == Expressions.Operator.Smaller)
+				return Smaller(Constant(first), Constant(second));
+
+			throw new ArgumentException();
+		}
+
+		public static Expression All(Expression first, ExpressionType subType, Expression second) {
+			throw new NotImplementedException();
+		}
+
+		public static ConstantExpression Array(IEnumerable<Expression> list) {
+			return Constant(new DataObject(new ArrayType(), list));
 		}
 	}
 }

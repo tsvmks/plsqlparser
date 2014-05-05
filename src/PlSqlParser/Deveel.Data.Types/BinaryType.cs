@@ -31,6 +31,10 @@ namespace Deveel.Data.Types {
 			AssertIsBinary(sqlType);
 		}
 
+		public override bool IsIndexable {
+			get { return false; }
+		}
+
 		private static void AssertIsBinary(SqlType sqlType) {
 			if (sqlType != SqlType.Binary &&
 				sqlType != SqlType.VarBinary &&
@@ -45,6 +49,39 @@ namespace Deveel.Data.Types {
 				sb.AppendFormat("({0})", MaxSize);
 
 			return sb.ToString();
+		}
+
+		protected override object CastObjectTo(object value, DataType destType) {
+			var sqlType = destType.SqlType;
+
+			if (value is BinaryObject) {
+				if (sqlType != SqlType.Object &&
+					 sqlType != SqlType.Blob &&
+					 sqlType != SqlType.Binary &&
+					 sqlType != SqlType.VarBinary &&
+					 sqlType != SqlType.LongVarBinary) {
+					// Attempt to deserialize it
+						
+					value = ((BinaryObject)value).Deserialize();
+				} else {
+					// This is a BinaryObject that is being cast to a binary type so
+					// no further processing is necessary.
+					return value;
+				}
+			}
+
+			// IBlobRef can be BINARY, OBJECT, VARBINARY or LONGVARBINARY
+			if (value is IBlob) {
+				if (sqlType == SqlType.Binary ||
+					sqlType == SqlType.Blob ||
+					sqlType == SqlType.Object ||
+					sqlType == SqlType.VarBinary ||
+					sqlType == SqlType.LongVarBinary) {
+					return value;
+				}
+			}
+
+			return base.CastObjectTo(value, destType);
 		}
 	}
 }

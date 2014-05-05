@@ -1,4 +1,18 @@
-﻿using System;
+﻿// 
+//  Copyright 2014  Deveel
+// 
+//    Licensed under the Apache License, Version 2.0 (the "License");
+//    you may not use this file except in compliance with the License.
+//    You may obtain a copy of the License at
+// 
+//        http://www.apache.org/licenses/LICENSE-2.0
+// 
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS,
+//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//    See the License for the specific language governing permissions and
+//    limitations under the License.
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -20,6 +34,7 @@ namespace Deveel.Data.Expressions {
 				case ExpressionType.Negate:
 				case ExpressionType.Not:
 				case ExpressionType.Cast:
+				case ExpressionType.TypeIs:
 					return VisitUnary((UnaryExpression) exp);
 				case ExpressionType.Add:
 				case ExpressionType.Subtract:
@@ -34,16 +49,19 @@ namespace Deveel.Data.Expressions {
 				case ExpressionType.GreaterOrEqual:
 				case ExpressionType.Equal:
 				case ExpressionType.NotEqual:
-				case ExpressionType.Like:
-					return VisitBinary((BinaryExpression) exp);
 				case ExpressionType.Is:
-					return VisitTypeIs((TypeIsExpression) exp);
+				case ExpressionType.Like:
+				case ExpressionType.Any:
+				case ExpressionType.All:
+					return VisitBinary((BinaryExpression) exp);
 				case ExpressionType.Conditional:
 					return VisitConditional((ConditionalExpression) exp);
 				case ExpressionType.Constant:
 					return VisitConstant((ConstantExpression) exp);
 				case ExpressionType.Variable:
 					return VisitVariable((VariableExpression) exp);
+				case ExpressionType.CorrelatedVariable:
+					return VisitCorrelatedVariable((CorrelatedVariableExpression) exp);
 				case ExpressionType.Call:
 					return VisitMethodCall((FunctionCallExpression) exp);
 				case ExpressionType.Query:
@@ -53,6 +71,10 @@ namespace Deveel.Data.Expressions {
 				default:
 					throw new Exception(string.Format("Unhandled expression type: '{0}'", exp.ExpressionType));
 			}
+		}
+
+		protected virtual Expression VisitCorrelatedVariable(CorrelatedVariableExpression expression) {
+			return expression;
 		}
 
 		protected virtual SubsetExpression VisitSubset(SubsetExpression expression) {

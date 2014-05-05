@@ -23,6 +23,7 @@ namespace Deveel.Data.Sql {
 		public FilterExpression(Expression expression) {
 			if (expression == null)
 				throw new ArgumentNullException("expression");
+
 			Expression = expression;
 		}
 

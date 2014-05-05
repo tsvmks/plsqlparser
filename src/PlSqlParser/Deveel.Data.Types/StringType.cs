@@ -15,11 +15,14 @@
 
 using System;
 using System.Globalization;
+using System.IO;
 using System.Text;
 
 namespace Deveel.Data.Types {
 	[Serializable]
 	public sealed class StringType : DataType {
+		private CompareInfo collator;
+
 		public StringType(SqlType sqlType) 
 			: this(sqlType, -1) {
 		}
@@ -42,6 +45,20 @@ namespace Deveel.Data.Types {
 		public int MaxSize { get; private set; }
 
 		public CultureInfo Locale { get; private set; }
+
+		private CompareInfo Collator {
+			get {
+				lock (this) {
+					if (collator != null) {
+						return collator;
+					} else {
+						//TODO:
+						collator = Locale.CompareInfo;
+						return collator;
+					}
+				}
+			}
+		}
 
 		public override string ToString() {
 			var sb = new StringBuilder(Name);
@@ -148,20 +165,74 @@ namespace Deveel.Data.Types {
 				case (SqlType.TimeStamp):
 					return ToTimeStamp(str);
 				case (SqlType.Blob):
-				// fall through
 				case (SqlType.Binary):
-				// fall through
 				case (SqlType.VarBinary):
-				// fall through
 				case (SqlType.LongVarBinary):
 					return new BinaryObject(Encoding.Unicode.GetBytes(str));
 				case (SqlType.Null):
 					return null;
 				case (SqlType.Clob):
+					// TODO: have a context where to get a new CLOB
 					return new StringObject(str);
 				default:
 					throw new InvalidCastException();
 			}
+		}
+
+		protected override int CompareValues(object x, object y) {
+			if (x == y)
+				return 0;
+
+			// If lexicographical ordering,
+			if (Locale == null)
+				return LexicographicalOrder((IStringObject)x, (IStringObject)y);
+
+			return Collator.Compare(x.ToString(), y.ToString());
+		}
+
+		private static int LexicographicalOrder(IStringObject str1, IStringObject str2) {
+			// If both strings are small use the 'toString' method to compare the
+			// strings.  This saves the overhead of having to store very large string
+			// objects in memory for all comparisons.
+			long str1Size = str1.Length;
+			long str2Size = str2.Length;
+			if (str1Size < 32 * 1024 &&
+				str2Size < 32 * 1024) {
+				return str1.ToString().CompareTo(str2.ToString());
+			}
+
+			// The minimum size
+			long size = System.Math.Min(str1Size, str2Size);
+			TextReader r1 = str1.GetInput();
+			TextReader r2 = str2.GetInput();
+			try {
+				try {
+					while (size > 0) {
+						int c1 = r1.Read();
+						int c2 = r2.Read();
+						if (c1 != c2) {
+							return c1 - c2;
+						}
+						--size;
+					}
+					// They compare equally up to the limit, so now compare sizes,
+					if (str1Size > str2Size) {
+						// If str1 is larger
+						return 1;
+					} else if (str1Size < str2Size) {
+						// If str1 is smaller
+						return -1;
+					}
+					// Must be equal
+					return 0;
+				} finally {
+					r1.Close();
+					r2.Close();
+				}
+			} catch (IOException e) {
+				throw new Exception("IO Error: " + e.Message);
+			}
+
 		}
 	}
 }

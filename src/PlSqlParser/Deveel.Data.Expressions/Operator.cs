@@ -18,18 +18,55 @@ using System;
 namespace Deveel.Data.Expressions {
 	[Flags]
 	public enum Operator {
+		Unknown = 0,
+
 		// Multiplicative
-		Add,
-		Subtract,
-		Multiply,
-		Divide,
-		Modulo,
+		Add = 1,
+		Concat,			// TODO: Shift all op codes
+		Subtract = 2,
+		Multiply = 4,
+		Divide = 8,
+		Modulo = 16,
+
+		// Relational
+		Equal = 32,
+		NotEqual = 64,
+		Like = 128,
+		NotLike = 256,
+		Is = 512,
+		IsNot = 1024,
+		Smaller = 2048,
+		SmallerOrEqual = 4096,
+		Greater = 8192,
+		GreaterOrEqual = 16384,
 
 		// Logical
-		Equal,
-		NotEqual,
-		Like,
-		NotLike,
+		And = 32768,
+		Or = 65536,
 
+		All = 131072,
+		Any = 262144,
+
+		AllEqual = All | Equal,
+		AllNotEqual = All | NotEqual,
+		AllLike = All | Like,
+		AllNotLike = All | NotLike,
+		AllIs = All | Is,
+		AllIsNot = All | IsNot,
+		AllSmaller = All | Smaller,
+		AllSmallerOrEqual = All | SmallerOrEqual,
+		AllGreater = All | Greater,
+		AllGreaterOrEqual = All | GreaterOrEqual,
+		
+		AnyEqual = Any | Equal,
+		AnyNotEqual = Any | NotEqual,
+		AnyLike = Any | Like,
+		AnyNotLike = Any | NotLike,
+		AnyIs = Any | Is,
+		AnyIsNot = Any | IsNot,
+		AnySmaller = Any | Smaller,
+		AnySmallerOrEqual = Any | SmallerOrEqual,
+		AnyGreater = Any | Greater,
+		AnyGreaterOrEqual = Any | GreaterOrEqual,
 	}
 }

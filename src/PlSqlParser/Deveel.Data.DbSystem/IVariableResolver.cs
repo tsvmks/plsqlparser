@@ -21,8 +21,8 @@ namespace Deveel.Data.DbSystem {
 	public interface IVariableResolver {
 		int SetId { get; }
 
-		DataObject Resolve(VariableBind variable);
+		DataObject Resolve(ObjectName variable);
 
-		DataType ReturnType(VariableBind variable);
+		DataType ReturnType(ObjectName variable);
 	}
 }

@@ -11,6 +11,11 @@ using Deveel.Data.Sql.Statements;
 using Deveel.Data.Types;
 
 internal  class PlSqlTokenManager : PlSqlConstants {
+        public List<Token> tokenHistory = new List<Token>();
+
+        void CommonTokenAction(Token token) {
+                tokenHistory.Add(token);
+        }
   public  System.IO.TextWriter debugStream = Console.Out;
   public  void SetDebugStream(System.IO.TextWriter ds) { debugStream = ds; }
 private int mccStopStringLiteralDfa_0(int pos, long active0, long active1, long active2)

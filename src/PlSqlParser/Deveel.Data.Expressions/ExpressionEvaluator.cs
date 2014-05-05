@@ -1,4 +1,18 @@
-﻿using System;
+﻿// 
+//  Copyright 2014  Deveel
+// 
+//    Licensed under the Apache License, Version 2.0 (the "License");
+//    you may not use this file except in compliance with the License.
+//    You may obtain a copy of the License at
+// 
+//        http://www.apache.org/licenses/LICENSE-2.0
+// 
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS,
+//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//    See the License for the specific language governing permissions and
+//    limitations under the License.
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,6 +23,14 @@ using Deveel.Data.Types;
 
 namespace Deveel.Data.Expressions {
 	public static class ExpressionEvaluator {
+		public static DataObject Evaluate(this Expression expression, IQueryContext context) {
+			return Evaluate(expression, null, context);
+		}
+
+		public static DataObject Evaluate(this Expression expression, IVariableResolver resolver, IQueryContext context) {
+			return Evaluate(expression, null, resolver, context);
+		}
+
 		public static DataObject Evaluate(this Expression expression, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
 			var visitor = new Evaluator();
 			return visitor.EvaluateExpression(expression, group, resolver, context);
@@ -47,34 +69,32 @@ namespace Deveel.Data.Expressions {
 
 			private object ElementToObject(int index) {
 				object ob = elements[index];
-				if (ob is DataObject || 
-					ob is BinaryExpressionEvaluate ||
-					ob is UnaryExpressionEvaluate) {
+				if (ob is DataObject ||
+				    ob is BinaryExpressionEvaluate ||
+				    ob is UnaryExpressionEvaluate) {
 					return ob;
 				}
 
-				if (ob is VariableBind)
-					return resolver.Resolve((VariableBind)ob);
-				/*
+				if (ob is ObjectName)
+					return resolver.Resolve((ObjectName) ob);
+				if (ob is CorrelatedVariable)
+					return ((CorrelatedVariable) ob).EvalResult;
+/*
 TODO:
-if (ob is CorrelatedVariable)
-	return ((CorrelatedVariable)ob).EvalResult;
 if (ob is RoutineInvoke) {
-	IFunction fun = (IFunction)((RoutineInvoke)ob).GetFunction(context);
-	return fun.Execute(((RoutineInvoke)ob), group, resolver, context);
+IFunction fun = (IFunction)((RoutineInvoke)ob).GetFunction(context);
+return fun.Execute(((RoutineInvoke)ob), group, resolver, context);
 }
 */
 				if (ob is TableSelectExpression) {
-					// TODO:
-					//TableSelectExpression selectExpression = (TableSelectExpression)ob;
+					TableSelectExpression selectExpression = (TableSelectExpression)ob;
 
-					//// Generate the TableExpressionFromSet hierarchy for the expression,
-					//TableExpressionFromSet from_set = Planner.GenerateFromSet(selectExpression, context.Connection);
+					// Generate the TableExpressionFromSet hierarchy for the expression,
+					TableExpressionFromSet fromSet = Planner.GenerateFromSet(selectExpression, context.Connection);
 
-					//// Form the plan
-					//IQueryPlanNode plan = Planner.FormQueryPlan(context.Connection, selectExpression, from_set, new List<ByColumn>());
+					// Form the plan
+					IQueryPlanNode plan = Planner.FormQueryPlan(context.Connection, selectExpression, fromSet, new List<ByColumn>());
 
-					IQueryPlanNode plan = null;
 					return new DataObject(PrimitiveTypes.Query(), plan);
 				}
 
@@ -175,6 +195,11 @@ if (ob is RoutineInvoke) {
 			protected override Expression VisitSubQuery(SubQueryExpression expression) {
 				elements.Add(expression.SelectExpression);
 				return base.VisitSubQuery(expression);
+			}
+
+			protected override Expression VisitCorrelatedVariable(CorrelatedVariableExpression expression) {
+				elements.Add(expression.CorrelatedVariable);
+				return base.VisitCorrelatedVariable(expression);
 			}
 
 			public DataObject EvaluateExpression(Expression expression, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {

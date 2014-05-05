@@ -30,13 +30,11 @@ namespace Deveel.Data.Sql {
 
 			var whereExp = selectStatement.SelectExpression.Where;
 			Assert.IsNotNull(whereExp);
-			Assert.IsInstanceOf<EqualExpression>(whereExp);
-			Assert.IsInstanceOf<VariableExpression>(((EqualExpression)whereExp).First);
-			Assert.IsInstanceOf<ConstantExpression>(((EqualExpression)whereExp).Second);
+			Assert.IsInstanceOf<FilterExpression>(whereExp);
 
-			Assert.IsNotEmpty(whereExp.AllVariables());
-			Assert.AreEqual(1, whereExp.AllVariables().Count());
-			Assert.AreEqual("Name", whereExp.AllVariables().First().VariableName);
+			Assert.IsNotEmpty(whereExp.Expression.AllVariables());
+			Assert.AreEqual(1, whereExp.Expression.AllVariables().Count());
+			Assert.AreEqual("Name", whereExp.Expression.AllVariables().First().ToString());
 		}
 
 		[Test]

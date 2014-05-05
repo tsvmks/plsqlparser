@@ -23,12 +23,12 @@ namespace Deveel.Data.Types {
 			AssertDateType(sqlType);
 		}
 
-		public static readonly string[] DateFormatSql = new[] {
+		public static readonly string[] DateFormatSql = {
 			"yyyy-MM-dd",
 			"yyyy MM dd"
 		};
 
-		public static readonly string[] TimeFormatSql = new[] {
+		public static readonly string[] TimeFormatSql = {
 			"HH:mm:ss.fff z",
 			"HH:mm:ss.fff zz",
 			"HH:mm:ss.fff zzz",
@@ -39,7 +39,7 @@ namespace Deveel.Data.Types {
 			"HH:mm:ss"
 		};
 
-		public static readonly string[] TsFormatSql = new[] {
+		public static readonly string[] TsFormatSql = {
 			"yyyy-MM-dd HH:mm:ss.fff",
 			"yyyy-MM-dd HH:mm:ss.fff z",
 			"yyyy-MM-dd HH:mm:ss.fff zz",
@@ -65,6 +65,18 @@ namespace Deveel.Data.Types {
 				sqlType != SqlType.Time &&
 				sqlType != SqlType.TimeStamp)
 				throw new ArgumentException(String.Format("The SQL type {0} is not a valid DATE", sqlType), "sqlType");
+		}
+
+		public override bool Equals(object obj) {
+			var other = obj as DataType;
+			if (other == null)
+				return false;
+
+			return SqlType == other.SqlType;
+		}
+
+		public override int GetHashCode() {
+			return SqlType.GetHashCode();
 		}
 	}
 }

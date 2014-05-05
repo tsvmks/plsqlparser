@@ -16,12 +16,12 @@
 using System;
 using System.Collections.Generic;
 
-using Deveel.Data.Query;
+using Deveel.Data.Expressions;
 using Deveel.Data.Types;
 
-namespace Deveel.Data.Expressions {
+namespace Deveel.Data.Query {
 	static class TableNameExplorer {
-		public static IList<ObjectName> DiscoverTableNames(Expression expression, IList<ObjectName> tableNames) {
+		public static IList<ObjectName> DiscoverTableNames(this Expression expression, IList<ObjectName> tableNames) {
 			var visitor = new TableNameVisitor(tableNames);
 			Expression.Visit(expression, visitor);
 			return visitor.TableNames;

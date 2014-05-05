@@ -21,7 +21,7 @@ namespace Deveel.Data.DbSystem {
 
 		int Count { get; }
 
-		DataObject Resolve(VariableBind variable, int setIndex);
+		DataObject Resolve(ObjectName variable, int setIndex);
 
 		IVariableResolver GetVariableResolver(int setIndex);
 	}
