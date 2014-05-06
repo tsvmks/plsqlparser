@@ -19,7 +19,7 @@ using System.IO;
 using System.Text;
 
 using Deveel.Data.DbSystem;
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 using Deveel.Data.Sql.Parser;
 using Deveel.Data.Sql.Statements;
 

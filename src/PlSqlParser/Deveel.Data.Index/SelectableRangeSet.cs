@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Index {
 	/// <summary>

@@ -16,7 +16,7 @@ using System;
 using System.Collections.Generic;
 
 using Deveel.Data.DbSystem;
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 using Deveel.Data.Sql;
 
 namespace Deveel.Data.Query {

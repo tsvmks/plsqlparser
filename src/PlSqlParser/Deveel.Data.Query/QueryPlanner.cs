@@ -18,10 +18,10 @@ using System.Collections;
 using System.Collections.Generic;
 
 using Deveel.Data.DbSystem;
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 using Deveel.Data.Sql;
 using Deveel.Data.Sql.Statements;
-using Deveel.Data.Types;
+using Deveel.Data.Sql.Types;
 
 namespace Deveel.Data.Query {
 	/// <summary>

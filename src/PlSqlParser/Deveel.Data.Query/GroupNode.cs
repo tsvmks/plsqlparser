@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using Deveel.Data.DbSystem;
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Query {
 	/// <summary>

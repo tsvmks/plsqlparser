@@ -17,8 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Deveel.Data.Expressions;
-using Deveel.Data.Types;
+using Deveel.Data.Sql.Expressions;
+using Deveel.Data.Sql.Types;
 
 namespace Deveel.Data {
 	[Serializable]

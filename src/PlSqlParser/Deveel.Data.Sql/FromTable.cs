@@ -14,7 +14,7 @@
 //    limitations under the License.
 using System;
 
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Sql {
 	[Serializable]

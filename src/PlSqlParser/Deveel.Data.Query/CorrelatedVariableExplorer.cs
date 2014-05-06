@@ -16,8 +16,8 @@
 using System;
 using System.Collections.Generic;
 
-using Deveel.Data.Expressions;
-using Deveel.Data.Types;
+using Deveel.Data.Sql.Expressions;
+using Deveel.Data.Sql.Types;
 
 namespace Deveel.Data.Query {
 	static class CorrelatedVariableExplorer {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 using Deveel.Data.Sql.Statements;
 
 namespace Deveel.Data.Sql {

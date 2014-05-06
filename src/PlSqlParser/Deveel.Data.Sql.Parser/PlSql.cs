@@ -8,9 +8,9 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using Deveel.Data.Expressions;
+using Expressions;
 using Deveel.Data.Sql.Statements;
-using Deveel.Data.Types;
+using Types;
 
 class PlSql : PlSqlConstants {
     private ObjectName lastObjectReference = null;

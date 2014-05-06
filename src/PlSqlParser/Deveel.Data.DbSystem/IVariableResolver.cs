@@ -15,7 +15,7 @@
 
 using System;
 
-using Deveel.Data.Types;
+using Deveel.Data.Sql.Types;
 
 namespace Deveel.Data.DbSystem {
 	public interface IVariableResolver {

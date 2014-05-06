@@ -13,9 +13,9 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 using Deveel.Data.Sql.Statements;
-using Deveel.Data.Types;
+using Deveel.Data.Sql.Types;
 
 class PlSql {
     private ObjectName lastObjectReference = null;

@@ -15,7 +15,7 @@
 using System;
 using System.Collections.Generic;
 
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Sql {
 	public sealed class JoiningSet {

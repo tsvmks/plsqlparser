@@ -16,7 +16,7 @@
 using System;
 using System.Diagnostics;
 
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data {
 	[Serializable]

@@ -14,8 +14,8 @@
 //    limitations under the License.
 using System;
 
-using Deveel.Data.Expressions;
-using Deveel.Data.Types;
+using Deveel.Data.Sql.Expressions;
+using Deveel.Data.Sql.Types;
 
 namespace Deveel.Data.Sql.Parser {
 	static class ParserUtil {

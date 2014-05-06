@@ -18,7 +18,7 @@ using System;
 using System.IO;
 
 using Deveel.Data.Sql;
-using Deveel.Data.Types;
+using Deveel.Data.Sql.Types;
 
 namespace Deveel.Data.DbSystem {
 	/// <summary>

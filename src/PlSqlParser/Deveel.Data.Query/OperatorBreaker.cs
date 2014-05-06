@@ -15,7 +15,7 @@
 
 using System.Collections.Generic;
 
-using Deveel.Data.Expressions;
+using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Query {
 	public static class OperatorBreaker {

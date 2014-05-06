@@ -7,7 +7,7 @@ using Microsoft.SqlServer.Server;
 
 using NUnit.Framework;
 
-namespace Deveel.Data.Expressions {
+namespace Deveel.Data.Sql.Expressions {
 	[TestFixture]
 	public class ExpressionTests {
 		[Test]

@@ -21,7 +21,7 @@ using System.Linq;
 using System.Text;
 
 using Deveel.Data.Index;
-using Deveel.Data.Types;
+using Deveel.Data.Sql.Types;
 
 using SysMath = System.Math;
 
