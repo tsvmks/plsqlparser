@@ -68,6 +68,20 @@ namespace Deveel.Data.Types {
 			return sb.ToString();
 		}
 
+		public override bool IsComparable(DataType type) {
+			// Are we comparing with another string type?
+			if (!(type is StringType))
+				return false;
+
+			var stringType = (StringType)type;
+			// If either locale is null return true
+			if (Locale == null || stringType.Locale == null)
+				return true;
+
+			// If the locales are the same return true
+			return Locale.Equals(stringType.Locale);
+		}
+
 		private static Number ToBigNumber(String str) {
 			try {
 				return Number.Parse(str);

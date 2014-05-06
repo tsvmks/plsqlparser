@@ -942,7 +942,7 @@ namespace Deveel.Data.Query {
 			/// </remarks>
 			public void SelectAllColumnsFromSource(ObjectName tableName) {
 				// Attempt to find the table in the from set.
-				IFromTableSource table = fromSet.FindTable(tableName.Parent.Name, tableName.Name);
+				IFromTableSource table = fromSet.FindTable(tableName.Parent != null ? tableName.Parent.Name : null, tableName.Name);
 				if (table == null)
 					throw new ApplicationException(tableName + ".* is not a valid reference.");
 

@@ -192,6 +192,11 @@ return fun.Execute(((RoutineInvoke)ob), group, resolver, context);
 				return expression;
 			}
 
+			protected override Expression VisitVariable(VariableExpression expression) {
+				elements.Add(expression.VariableName);
+				return expression;
+			}
+
 			protected override Expression VisitSubQuery(SubQueryExpression expression) {
 				elements.Add(expression.SelectExpression);
 				return base.VisitSubQuery(expression);

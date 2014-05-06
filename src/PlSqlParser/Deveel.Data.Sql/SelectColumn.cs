@@ -32,11 +32,15 @@ namespace Deveel.Data.Sql {
 
 		public bool IsGlob {
 			get {
-				var exp = Expression as ConstantExpression;
-				if (exp == null)
-					return false;
+				string s = String.Empty;
+				if (Expression is ConstantExpression) {
+					var exp = Expression as ConstantExpression;
+					s = exp.Value.ToStringValue();
+				} else if (Expression is VariableExpression) {
+					var exp = Expression as VariableExpression;
+					s = exp.VariableName.ToString();
+				}
 
-				var s = exp.Value.ToStringValue();
 				return s == "*" || s.EndsWith(".*");
 			}
 		}
@@ -54,11 +58,15 @@ namespace Deveel.Data.Sql {
 
 		public string GlobPrefix {
 			get {
-				var exp = Expression as ConstantExpression;
-				if (exp == null)
-					return null;
+				string s = String.Empty;
+				if (Expression is ConstantExpression) {
+					var exp = Expression as ConstantExpression;
+					s = exp.Value.ToStringValue();
+				} else if (Expression is VariableExpression) {
+					var exp = Expression as VariableExpression;
+					s = exp.VariableName.ToString();
+				}
 
-				var s = exp.Value.ToStringValue();
 				var index = s.LastIndexOf(".*", StringComparison.InvariantCultureIgnoreCase);
 				if (index == -1)
 					return null;

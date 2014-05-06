@@ -134,6 +134,10 @@ namespace Deveel.Data.Types {
 			throw new ApplicationException("Widest type error.");
 		}
 
+		public override bool IsComparable(DataType type) {
+			return type is NumericType || type is BooleanType;
+		}
+
 		protected override int CompareValues(object x, object y) {
 			var n1 = (Number)x;
 			Number n2;

@@ -140,7 +140,7 @@ namespace Deveel.Data.Query {
 		/// </summary>
 		/// <param name="tn"></param>
 		public void ExposeAllColumnsFromSource(ObjectName tn) {
-			IFromTableSource table = FindTable(tn.Parent.Name, tn.Name);
+			IFromTableSource table = FindTable(tn.Parent != null ? tn.Parent.Name : null, tn.Name);
 			if (table == null)
 				throw new ApplicationException("Table name found: " + tn);
 
@@ -253,7 +253,7 @@ namespace Deveel.Data.Query {
 			string tableName = null;
 			string columnName = v.Name;
 			if (tname != null) {
-				schemaName = tname.Parent.Name;
+				schemaName = tname.Parent != null ? tname.Parent.Name : null;
 				tableName = tname.Name;
 			}
 

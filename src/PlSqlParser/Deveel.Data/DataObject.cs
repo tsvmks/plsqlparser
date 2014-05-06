@@ -283,5 +283,9 @@ namespace Deveel.Data {
 		public static DataObject String(IStringObject s) {
 			return new DataObject(PrimitiveTypes.String(), s);
 		}
+
+		public static DataObject Number(int value) {
+			return new DataObject(PrimitiveTypes.Numeric(SqlType.Integer), (Number)value);
+		}
 	}
 }

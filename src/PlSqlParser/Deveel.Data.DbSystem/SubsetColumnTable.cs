@@ -138,12 +138,12 @@ namespace Deveel.Data.DbSystem {
 			// in this subset column table.  Otherwise we leave as is.
 			// The reason is because FilterTable pretends the call came from its
 			// parent if a request is made on this table.
-			int mapped_original_column = originalColumn;
+			int mappedOriginalColumn = originalColumn;
 			if (table == this) {
-				mapped_original_column = column_map[originalColumn];
+				mappedOriginalColumn = column_map[originalColumn];
 			}
 
-			return base.GetSelectableSchemeFor(column_map[column], mapped_original_column, table);
+			return base.GetSelectableSchemeFor(column_map[column], mappedOriginalColumn, table);
 		}
 
 		/// <inheritdoc/>

@@ -107,8 +107,56 @@ namespace Deveel.Data.DbSystem {
 			throw new NotImplementedException();
 		}
 
-		public static ITable SimpleJoin(this ITable table, IQueryContext context, ITable other, ObjectName columnName, Operator op, Expression expression) {
-			throw new NotImplementedException();
+		public static ITable SimpleJoin(this ITable theTable, IQueryContext context, ITable table, ObjectName columnName, Operator op, Expression expression) {
+			Table t = (Table) theTable;
+
+			// Find the row with the name given in the condition.
+			int lhsColumn = t.FindFieldName(columnName);
+
+			if (lhsColumn == -1)
+				throw new Exception("Unable to find the LHS column specified in the condition: " + columnName);
+
+			// Create a variable resolver that can resolve columns in the destination
+			// table.
+			Table.TableVariableResolver resolver = ((Table) table).GetVariableResolver();
+
+			// The join algorithm.  It steps through the RHS expression, selecting the
+			// cells that match the relation from the LHS table (this table).
+
+			List<long> thisRowSet = new List<long>();
+			List<long> tableRowSet = new List<long>();
+
+			IEnumerator<long> e = table.GetRowEnumerator();
+
+			while (e.MoveNext()) {
+				long rowIndex = e.Current;
+				resolver.SetId = (int) rowIndex;
+
+				// Resolve expression into a constant.
+				DataObject value = expression.Evaluate(resolver, context);
+
+				// Select all the rows in this table that match the joining condition.
+				IList<long> selectedSet = theTable.SelectRows(lhsColumn, op, value).ToList();
+
+				// Include in the set.
+				int size = selectedSet.Count;
+				for (int i = 0; i < size; ++i) {
+					tableRowSet.Add(rowIndex);
+				}
+				thisRowSet.AddRange(selectedSet);
+
+			}
+
+			// Create the new VirtualTable with the joined tables.
+
+			Table[] tabs = new Table[] { (Table) theTable, (Table)table };
+			IList<long>[] rowSets = new IList<long>[] { thisRowSet, tableRowSet };
+
+			VirtualTable outTable = new VirtualTable(tabs);
+			outTable.Set(tabs, rowSets);
+
+			return outTable;
+
 		}
 
 		public static ITable Outer(this ITable table, ITable other) {

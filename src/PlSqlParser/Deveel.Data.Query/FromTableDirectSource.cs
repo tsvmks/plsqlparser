@@ -18,13 +18,6 @@ using System;
 using Deveel.Data.DbSystem;
 
 namespace Deveel.Data.Query {
-	/// <summary>
-	/// An implementation of <see cref="IFromTableSource"/> that wraps around a 
-	/// <see cref="TableName"/>/<see cref="DataTableBase"/> object.
-	/// </summary>
-	/// <remarks>
-	/// The handles case insensitive resolution.
-	/// </remarks>
 	public class FromTableDirectSource : IFromTableSource {
 		/// <summary>
 		/// The ITableQueryInfo object that links to the underlying table.
@@ -57,7 +50,7 @@ namespace Deveel.Data.Query {
 		public FromTableDirectSource(bool caseInsensitive, ITableQueryInfo tableQuery, string uniqueName, ObjectName givenName, ObjectName rootName) {
 			this.uniqueName = uniqueName;
 			dataTableInfo = tableQuery.TableInfo;
-			this.RootTableName = rootName;
+			RootTableName = rootName;
 			if (givenName != null) {
 				GivenTableName = givenName;
 			} else {
@@ -161,7 +154,7 @@ namespace Deveel.Data.Query {
 				int resolveCount = 0;
 				int colCount = dataTableInfo.ColumnCount;
 				for (int i = 0; i < colCount; ++i) {
-					if (String.Compare(dataTableInfo[i].Name, column, true) == 0)
+					if (String.Compare(dataTableInfo[i].Name, column, StringComparison.OrdinalIgnoreCase) == 0)
 						++resolveCount;
 				}
 				return resolveCount;
