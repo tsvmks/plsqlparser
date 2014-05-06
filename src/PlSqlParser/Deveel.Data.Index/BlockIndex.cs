@@ -26,32 +26,32 @@ namespace Deveel.Data.Index {
 	/// This type of structure is useful for large in-memory lists in which a
 	/// dd/remove performance must be fast.
 	/// </remarks>
-	public class BlockIndex : BlockIndexBase {
+	public class BlockIndex<T> : BlockIndexBase<T> where T : IComparable {
 		public BlockIndex() {
 		}
 
-		public BlockIndex(IEnumerable<int> values)
+		public BlockIndex(IEnumerable<T> values)
 			: base(values) {
 		}
 
-		public BlockIndex(IIndex index)
+		public BlockIndex(IIndex<T> index)
 			: base(index) {
 		}
 
-		protected BlockIndex(IEnumerable<IIndexBlock> blocks)
+		protected BlockIndex(IEnumerable<IIndexBlock<T>> blocks)
 			: base(blocks) {
 		}
 
-		protected override IIndexBlock NewBlock() {
-			return new Block(512);
+		protected override IIndexBlock<T> NewBlock() {
+			return new Block<T>(512);
 		}
 
 		#region Block
 
-		protected class Block : IIndexBlock {
-			private Block next;
-			private Block prev;
-			private int[] array;
+		protected class Block<T> : IIndexBlock<T> where T : IComparable {
+			private Block<T> next;
+			private Block<T> prev;
+			private T[] array;
 			private int count;
 			private bool changed;
 
@@ -60,11 +60,11 @@ namespace Deveel.Data.Index {
 
 			public Block(int blockSize)
 				: this() {
-				array = new int[blockSize];
+				array = new T[blockSize];
 				count = 0;
 			}
 
-			protected int[] BaseArray {
+			protected T[] BaseArray {
 				get { return array; }
 				set { array = value; }
 			}
@@ -73,7 +73,7 @@ namespace Deveel.Data.Index {
 				get { return array.Length; }
 			}
 
-			public IEnumerator<int> GetEnumerator() {
+			public IEnumerator<T> GetEnumerator() {
 				return new Enumerator(this);
 			}
 
@@ -81,22 +81,22 @@ namespace Deveel.Data.Index {
 				return GetEnumerator();
 			}
 
-			IIndexBlock IIndexBlock.Next {
+			IIndexBlock<T> IIndexBlock<T>.Next {
 				get { return Next; }
-				set { Next = (Block) value; }
+				set { Next = (Block<T>) value; }
 			}
 
-			public Block Next {
+			public Block<T> Next {
 				get { return next; }
 				set { next = value; }
 			}
 
-			IIndexBlock IIndexBlock.Previous {
+			IIndexBlock<T> IIndexBlock<T>.Previous {
 				get { return Previous; }
-				set { Previous = (Block) value; }
+				set { Previous = (Block<T>) value; }
 			}
 
-			public Block Previous {
+			public Block<T> Previous {
 				get { return prev; }
 				set { prev = value; }
 			}
@@ -118,11 +118,11 @@ namespace Deveel.Data.Index {
 				get { return count <= 0; }
 			}
 
-			public virtual int Top {
+			public virtual T Top {
 				get { return GetArray(true)[count - 1]; }
 			}
 
-			public virtual int Bottom {
+			public virtual T Bottom {
 				get {
 					if (count <= 0)
 						throw new ApplicationException("no bottom value.");
@@ -131,7 +131,7 @@ namespace Deveel.Data.Index {
 				}
 			}
 
-			public int this[int index] {
+			public T this[int index] {
 				get { return GetArray(true)[index]; }
 				set { 
 					changed = true;
@@ -139,7 +139,7 @@ namespace Deveel.Data.Index {
 				}
 			}
 
-			protected virtual int[] GetArray(bool readOnly) {
+			protected virtual T[] GetArray(bool readOnly) {
 				return array;
 			}
 
@@ -147,53 +147,53 @@ namespace Deveel.Data.Index {
 				return count + number + 1 < ArrayLength;
 			}
 
-			public void Add(int value) {
+			public void Add(T value) {
 				changed = true;
-				int[] arr = GetArray(false);
+				T[] arr = GetArray(false);
 				arr[count] = value;
 				++count;
 			}
 
-			public int RemoveAt(int index) {
+			public T RemoveAt(int index) {
 				changed = true;
-				int[] arr = GetArray(false);
-				int val = arr[index];
+				T[] arr = GetArray(false);
+				T val = arr[index];
 				Array.Copy(array, index + 1, arr, index, (count - index));
 				--count;
 				return val;
 			}
 
-			public int IndexOf(int value) {
-				int[] arr = GetArray(true);
+			public int IndexOf(T value) {
+				T[] arr = GetArray(true);
 				for (int i = count - 1; i >= 0; --i) {
-					if (arr[i] == value)
+					if (arr[i].Equals(value))
 						return i;
 				}
 				return -1;
 			}
 
-			public int IndexOf(int value, int startIndex) {
-				int[] arr = GetArray(true);
+			public int IndexOf(T value, int startIndex) {
+				T[] arr = GetArray(true);
 				for (int i = startIndex; i < count; ++i) {
-					if (arr[i] == value)
+					if (arr[i].Equals(value))
 						return i;
 				}
 				return -1;
 			}
 
-			public void Insert(int index, int value) {
+			public void Insert(int index, T value) {
 				changed = true;
-				int[] arr = GetArray(false);
+				T[] arr = GetArray(false);
 				Array.Copy(array, index, arr, index + 1, (count - index));
 				++count;
 				arr[index] = value;
 			}
 
-			public void MoveTo(IIndexBlock destBlock, int destIndex, int length) {
-				Block block = (Block)destBlock;
+			public void MoveTo(IIndexBlock<T> destBlock, int destIndex, int length) {
+				Block<T> block = (Block<T>)destBlock;
 
-				int[] arr = GetArray(false);
-				int[] dest_arr = block.GetArray(false);
+				T[] arr = GetArray(false);
+				T[] dest_arr = block.GetArray(false);
 
 				// Make room in the destination block
 				int destb_size = block.Count;
@@ -210,15 +210,15 @@ namespace Deveel.Data.Index {
 				block.changed = true;
 			}
 
-			public void CopyTo(IIndexBlock destBlock) {
-				Block block = (Block)destBlock;
-				int[] destArr = block.GetArray(false);
+			public void CopyTo(IIndexBlock<T> destBlock) {
+				Block<T> block = (Block<T>)destBlock;
+				T[] destArr = block.GetArray(false);
 				Array.Copy(GetArray(true), 0, destArr, 0, count);
 				block.count = count;
 				block.changed = true;
 			}
 
-			public int CopyTo(int[] destArray, int arrayIndex) {
+			public int CopyTo(T[] destArray, int arrayIndex) {
 				Array.Copy(GetArray(true), 0, destArray, arrayIndex, count);
 				return count;
 			}
@@ -228,8 +228,8 @@ namespace Deveel.Data.Index {
 				count = 0;
 			}
 
-			public int BinarySearch(object key, IIndexComparer comparer) {
-				int[] arr = GetArray(true);
+			public int BinarySearch(object key, IIndexComparer<T> comparer) {
+				T[] arr = GetArray(true);
 				int low = 0;
 				int high = count - 1;
 
@@ -247,8 +247,8 @@ namespace Deveel.Data.Index {
 				return -(low + 1);  // key not found.
 			}
 
-			public int SearchFirst(object key, IIndexComparer comparer) {
-				int[] arr = GetArray(true);
+			public int SearchFirst(object key, IIndexComparer<T> comparer) {
+				T[] arr = GetArray(true);
 				int low = 0;
 				int high = count - 1;
 
@@ -279,8 +279,8 @@ namespace Deveel.Data.Index {
 
 			}
 
-			public int SearchLast(object key, IIndexComparer comparer) {
-				int[] arr = GetArray(true);
+			public int SearchLast(object key, IIndexComparer<T> comparer) {
+				T[] arr = GetArray(true);
 				int low = 0;
 				int high = count - 1;
 
@@ -311,8 +311,8 @@ namespace Deveel.Data.Index {
 				return -(low + 1);  // key not found.
 			}
 
-			public int SearchFirst(int value) {
-				int[] arr = GetArray(true);
+			public int SearchFirst(T value) {
+				T[] arr = GetArray(true);
 				int low = 0;
 				int high = count - 1;
 
@@ -320,9 +320,9 @@ namespace Deveel.Data.Index {
 
 					if (high - low <= 2) {
 						for (int i = low; i <= high; ++i) {
-							if (arr[i] == value)
+							if (arr[i].Equals(value))
 								return i;
-							if (arr[i] > value)
+							if (arr[i].CompareTo(value) < 0)
 								return -(i + 1);
 						}
 						return -(high + 2);
@@ -330,9 +330,9 @@ namespace Deveel.Data.Index {
 
 					int mid = (low + high) / 2;
 
-					if (arr[mid] < value) {
+					if (arr[mid].CompareTo(value) > 0) {
 						low = mid + 1;
-					} else if (arr[mid] > value) {
+					} else if (arr[mid].CompareTo(value) < 0) {
 						high = mid - 1;
 					} else {
 						high = mid;
@@ -341,8 +341,8 @@ namespace Deveel.Data.Index {
 				return -(low + 1);  // key not found.
 			}
 
-			public int SearchLast(int value) {
-				int[] arr = GetArray(true);
+			public int SearchLast(T value) {
+				T[] arr = GetArray(true);
 				int low = 0;
 				int high = count - 1;
 
@@ -350,9 +350,9 @@ namespace Deveel.Data.Index {
 
 					if (high - low <= 2) {
 						for (int i = high; i >= low; --i) {
-							if (arr[i] == value)
+							if (arr[i].CompareTo(value) == 0)
 								return i;
-							if (arr[i] < value)
+							if (arr[i].CompareTo(value) > 0)
 								return -(i + 2);
 						}
 						return -(low + 1);
@@ -360,9 +360,9 @@ namespace Deveel.Data.Index {
 
 					int mid = (low + high) / 2;
 
-					if (arr[mid] < value) {
+					if (arr[mid].CompareTo(value) > 0) {
 						low = mid + 1;
-					} else if (arr[mid] > value) {
+					} else if (arr[mid].CompareTo(value) < 0) {
 						high = mid - 1;
 					} else {
 						low = mid;
@@ -373,12 +373,12 @@ namespace Deveel.Data.Index {
 
 			#region Enumerator
 
-			class Enumerator : IEnumerator<int> {
-				private readonly Block block;
+			class Enumerator : IEnumerator<T> {
+				private readonly Block<T> block;
 				private int index;
-				private int[] array;
+				private T[] array;
 
-				public Enumerator(Block block) {
+				public Enumerator(Block<T> block) {
 					this.block = block;
 					array = block.GetArray(true);
 					index = -1;
@@ -396,7 +396,7 @@ namespace Deveel.Data.Index {
 					index = -1;
 				}
 
-				public int Current {
+				public T Current {
 					get { return array[index]; }
 				}
 

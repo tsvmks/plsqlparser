@@ -62,6 +62,7 @@
     <Compile Include="Deveel.Data.DbSystem\JoinedTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\NaturallyJoinedTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\OuterTable.cs" />
+    <Compile Include="Deveel.Data.DbSystem\QueryContext.cs" />
     <Compile Include="Deveel.Data.DbSystem\RawTableInformation.cs" />
     <Compile Include="Deveel.Data.DbSystem\ReferenceTable.cs" />
     <Compile Include="Deveel.Data.DbSystem\SimpleDataRowEnumerator.cs" />
@@ -110,9 +111,13 @@
     <Compile Include="Deveel.Data.Index\CollatedBaseSearch.cs" />
     <Compile Include="Deveel.Data.Index\IIndex.cs" />
     <Compile Include="Deveel.Data.Index\IIndexBlock.cs" />
+    <Compile Include="Deveel.Data.Index\IIndexBlock_T.cs" />
     <Compile Include="Deveel.Data.Index\IIndexComparer.cs" />
+    <Compile Include="Deveel.Data.Index\IIndexComparer_T.cs" />
     <Compile Include="Deveel.Data.Index\IIndexEnumerator.cs" />
+    <Compile Include="Deveel.Data.Index\IIndexEnumerator_T.cs" />
     <Compile Include="Deveel.Data.Index\IIndex_T.cs" />
+    <Compile Include="Deveel.Data.Index\IndexExtensions.cs" />
     <Compile Include="Deveel.Data.Index\InsertSearch.cs" />
     <Compile Include="Deveel.Data.Index\RangePosition.cs" />
     <Compile Include="Deveel.Data.Index\SelectableRange.cs" />

@@ -59,42 +59,42 @@ namespace Deveel.Data.Index {
 	/// takes a constant amount of memory, this may not be acceptable.
 	/// </para>
 	/// </remarks>
-	public abstract class BlockIndexBase : IIndex {
+	public abstract class BlockIndexBase<T> : IIndex<T> where T : IComparable {
 		protected BlockIndexBase() {
 			Count = 0;
 			IsReadOnly = false;
-			Blocks = new List<IIndexBlock>(10);
+			Blocks = new List<IIndexBlock<T>>(10);
 		}
 
-		protected BlockIndexBase(IEnumerable<IIndexBlock> blocks)
+		protected BlockIndexBase(IEnumerable<IIndexBlock<T>> blocks)
 			: this() {
-			foreach (IIndexBlock block in blocks) {
+			foreach (IIndexBlock<T> block in blocks) {
 				this.Blocks.Add(block);
 				Count += block.Count;
 			}
 		}
 
-		protected BlockIndexBase(IEnumerable<int> values)
+		protected BlockIndexBase(IEnumerable<T> values)
 			: this() {
-			foreach (int value in values) {
+			foreach (T value in values) {
 				Add(value);
 			}
 		}
 
-		protected BlockIndexBase(IIndex index)
+		protected BlockIndexBase(IIndex<T> index)
 			: this() {
-			if (index is BlockIndexBase) {
+			if (index is BlockIndexBase<T>) {
 				// Optimization for when the input list is a BlockIntegerList
-				BlockIndexBase blockIndex = (BlockIndexBase) index;
+				BlockIndexBase<T> blockIndex = (BlockIndexBase<T>) index;
 
-				List<IIndexBlock> inBlocks = blockIndex.Blocks;
+				List<IIndexBlock<T>> inBlocks = blockIndex.Blocks;
 				int inBlocksCount = inBlocks.Count;
 				// For each block in 'blockIndex'
 				for (int i = 0; i < inBlocksCount; ++i) {
 					// get the block.
-					IIndexBlock block = inBlocks[i];
+					IIndexBlock<T> block = inBlocks[i];
 					// Insert a new block in this object.
-					IIndexBlock destBlock = InsertBlock(i, NewBlock());
+					IIndexBlock<T> destBlock = InsertBlock(i, NewBlock());
 					// Copy the contents of the source block to the new destination block.
 					block.CopyTo(destBlock);
 				}
@@ -103,7 +103,7 @@ namespace Deveel.Data.Index {
 				Count = blockIndex.Count; //count;
 			} else {
 				// The case when IIntegerList type is not known
-				IIndexEnumerator i = index.GetEnumerator();
+				IIndexEnumerator<T> i = index.GetEnumerator();
 				while (i.MoveNext()) {
 					Add(i.Current);
 				}
@@ -114,18 +114,18 @@ namespace Deveel.Data.Index {
 				IsReadOnly = true;
 		}
 
-		protected List<IIndexBlock> Blocks { get; private set; }
+		protected List<IIndexBlock<T>> Blocks { get; private set; }
 
 		public bool IsReadOnly { get; set; }
 
 		public int Count { get; private set; }
 
-		public int this[int index] {
+		public T this[int index] {
 			get {
 				int size = Blocks.Count;
 				int start = 0;
 				for (int i = 0; i < size; ++i) {
-					IIndexBlock block = Blocks[i];
+					IIndexBlock<T> block = Blocks[i];
 					int bsize = block.Count;
 					if (index >= start && index < start + bsize)
 						return block[index - start];
@@ -141,7 +141,7 @@ namespace Deveel.Data.Index {
 		/// Creates a new <see cref="IIndexBlock"/> for the given implementation.
 		/// </summary>
 		/// <returns></returns>
-		protected abstract IIndexBlock NewBlock();
+		protected abstract IIndexBlock<T> NewBlock();
 
 		/// <summary>
 		/// Called when the class decides the given <see cref="IIndexBlock"/> 
@@ -151,7 +151,7 @@ namespace Deveel.Data.Index {
 		/// <remarks>
 		/// Provided as an event for derived classes to intercept.
 		/// </remarks>
-		protected virtual void OnDeleteBlock(IIndexBlock block) {
+		protected virtual void OnDeleteBlock(IIndexBlock<T> block) {
 		}
 
 
@@ -161,12 +161,12 @@ namespace Deveel.Data.Index {
 		/// <param name="index"></param>
 		/// <param name="block"></param>
 		/// <returns></returns>
-		private IIndexBlock InsertBlock(int index, IIndexBlock block) {
+		private IIndexBlock<T> InsertBlock(int index, IIndexBlock<T> block) {
 			Blocks.Insert(index, block);
 
 			// Point to next in the list.
 			if (index + 1 < Blocks.Count) {
-				IIndexBlock nextBlock = Blocks[index + 1];
+				IIndexBlock<T> nextBlock = Blocks[index + 1];
 				block.Next = nextBlock;
 				nextBlock.Previous = block;
 			} else {
@@ -175,7 +175,7 @@ namespace Deveel.Data.Index {
 
 			// Point to previous in the list.
 			if (index > 0) {
-				IIndexBlock prevBlock = Blocks[index - 1];
+				IIndexBlock<T> prevBlock = Blocks[index - 1];
 				block.Previous = prevBlock;
 				prevBlock.Next = block;
 			} else {
@@ -191,8 +191,8 @@ namespace Deveel.Data.Index {
 		/// <param name="index"></param>
 		private void RemoveBlock(int index) {
 			// Alter linked list pointers.
-			IIndexBlock newPrev = null;
-			IIndexBlock newNext = null;
+			IIndexBlock<T> newPrev = null;
+			IIndexBlock<T> newNext = null;
 			if (index + 1 < Blocks.Count) {
 				newNext = Blocks[index + 1];
 			}
@@ -207,7 +207,7 @@ namespace Deveel.Data.Index {
 				newNext.Previous = newPrev;
 			}
 
-			IIndexBlock beenRemoved = Blocks[index];
+			IIndexBlock<T> beenRemoved = Blocks[index];
 			Blocks.RemoveAt(index);
 			OnDeleteBlock(beenRemoved);
 		}
@@ -219,7 +219,7 @@ namespace Deveel.Data.Index {
 		/// <param name="blockIndex"></param>
 		/// <param name="block"></param>
 		/// <param name="position"></param>
-		private void InsertIntoBlock(int value, int blockIndex, IIndexBlock block, int position) {
+		private void InsertIntoBlock(T value, int blockIndex, IIndexBlock<T> block, int position) {
 			block.Insert(position, value);
 			++Count;
 			// Is the block full?
@@ -231,11 +231,11 @@ namespace Deveel.Data.Index {
 				int moveSize = (block.Count/7) - 1;
 
 				// The block to move half the data from this block.
-				IIndexBlock moveTo;
+				IIndexBlock<T> moveTo;
 
 				// Is there a next block?
 				if (blockIndex < Blocks.Count - 1) {
-					IIndexBlock nextBlock = Blocks[blockIndex + 1];
+					IIndexBlock<T> nextBlock = Blocks[blockIndex + 1];
 					// Yes, can this block contain half the values from this block?
 					if (nextBlock.CanContain(moveSize)) {
 						moveTo = nextBlock;
@@ -265,15 +265,15 @@ namespace Deveel.Data.Index {
 		/// It returns the value that used to be at that position.
 		/// </remarks>
 		/// <returns></returns>
-		private int RemoveFromBlock(int blockIndex, IIndexBlock block, int position) {
-			int old_value = block.RemoveAt(position);
+		private T RemoveFromBlock(int blockIndex, IIndexBlock<T> block, int position) {
+			T oldValue = block.RemoveAt(position);
 			--Count;
 			// If we have emptied out this block, then we should remove it from the
 			// list.
 			if (block.IsEmpty && Blocks.Count > 1)
 				RemoveBlock(blockIndex);
 
-			return old_value;
+			return oldValue;
 		}
 
 		/// <summary>
@@ -285,7 +285,7 @@ namespace Deveel.Data.Index {
 		/// <param name="key"></param>
 		/// <param name="comparer"></param>
 		/// <returns></returns>
-		private int FindBlockContaining(object key, IIndexComparer comparer) {
+		private int FindBlockContaining(object key, IIndexComparer<T> comparer) {
 			if (Count == 0)
 				return -1;
 
@@ -294,7 +294,7 @@ namespace Deveel.Data.Index {
 
 			while (low <= high) {
 				int mid = (low + high)/2;
-				IIndexBlock block = Blocks[mid];
+				IIndexBlock<T> block = Blocks[mid];
 
 				// Is what we are searching for lower than the bottom value?
 				if (comparer.CompareValue(block.Bottom, (DataObject) key) > 0) {
@@ -322,7 +322,7 @@ namespace Deveel.Data.Index {
 		/// <param name="key"></param>
 		/// <param name="comparer"></param>
 		/// <returns></returns>
-		private int FindLastBlock(object key, IIndexComparer comparer) {
+		private int FindLastBlock(object key, IIndexComparer<T> comparer) {
 			if (Count == 0)
 				return -1;
 
@@ -332,7 +332,7 @@ namespace Deveel.Data.Index {
 			while (low <= high) {
 				if (high - low <= 2) {
 					for (int i = high; i >= low; --i) {
-						IIndexBlock block1 = Blocks[i];
+						IIndexBlock<T> block1 = Blocks[i];
 						if (comparer.CompareValue(block1.Bottom, (DataObject) key) <= 0) {
 							if (comparer.CompareValue(block1.Top, (DataObject) key) >= 0)
 								return i;
@@ -343,7 +343,7 @@ namespace Deveel.Data.Index {
 				}
 
 				int mid = (low + high)/2;
-				IIndexBlock block = Blocks[mid];
+				IIndexBlock<T> block = Blocks[mid];
 
 				// Is what we are searching for lower than the bottom value?
 				if (comparer.CompareValue(block.Bottom, (DataObject) key) > 0) {
@@ -374,7 +374,7 @@ namespace Deveel.Data.Index {
 		/// <param name="key"></param>
 		/// <param name="c"></param>
 		/// <returns></returns>
-		private int FindFirstBlock(object key, IIndexComparer c) {
+		private int FindFirstBlock(object key, IIndexComparer<T> c) {
 			if (Count == 0) {
 				return -1;
 			}
@@ -386,7 +386,7 @@ namespace Deveel.Data.Index {
 
 				if (high - low <= 2) {
 					for (int i = low; i <= high; ++i) {
-						IIndexBlock block1 = Blocks[i];
+						IIndexBlock<T> block1 = Blocks[i];
 						if (c.CompareValue(block1.Top, (DataObject) key) >= 0) {
 							if (c.CompareValue(block1.Bottom, (DataObject) key) <= 0)
 								return i;
@@ -397,7 +397,7 @@ namespace Deveel.Data.Index {
 				}
 
 				int mid = (low + high)/2;
-				IIndexBlock block = Blocks[mid];
+				IIndexBlock<T> block = Blocks[mid];
 
 				// Is what we are searching for lower than the bottom value?
 				if (c.CompareValue(block.Bottom, (DataObject) key) > 0) {
@@ -423,7 +423,7 @@ namespace Deveel.Data.Index {
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		private int FindLastBlock(int val) {
+		private int FindLastBlock(T val) {
 			if (Count == 0) {
 				return -1;
 			}
@@ -435,9 +435,9 @@ namespace Deveel.Data.Index {
 
 				if (high - low <= 2) {
 					for (int i = high; i >= low; --i) {
-						IIndexBlock block1 = Blocks[i];
-						if (block1.Bottom <= val) {
-							if (block1.Top >= val)
+						IIndexBlock<T> block1 = Blocks[i];
+						if (block1.Bottom.CompareTo(val) >= 0) {
+							if (block1.Top.CompareTo(val) <= 0)
 								return i;
 							return -(i + 1) - 1;
 						}
@@ -446,14 +446,14 @@ namespace Deveel.Data.Index {
 				}
 
 				int mid = (low + high)/2;
-				IIndexBlock block = Blocks[mid];
+				IIndexBlock<T> block = Blocks[mid];
 
 				// Is what we are searching for lower than the bottom value?
-				if (block.Bottom > val) {
+				if (block.Bottom.CompareTo(val) < 0) {
 					high = mid - 1;
 				}
 					// No, then is it greater than the highest value?
-				else if (block.Top < val) {
+				else if (block.Top.CompareTo(val) > 0) {
 					low = mid + 1;
 				}
 					// Equal, so highest must be someplace between mid and high.
@@ -499,22 +499,22 @@ namespace Deveel.Data.Index {
 		/// <remarks>
 		/// The int[] array must be big enough to fit all the data in this list.
 		/// </remarks>
-		internal void CopyToArray(int[] array, int offset, int length) {
+		internal void CopyToArray(T[] array, int offset, int length) {
 			if (array.Length < length || (offset + length) > Count)
 				throw new ApplicationException("Size mismatch.");
 
-			foreach (IIndexBlock block in Blocks) {
+			foreach (IIndexBlock<T> block in Blocks) {
 				offset += block.CopyTo(array, offset);
 			}
 		}
 
-		public void Insert(int index, int value) {
+		public void Insert(int index, T value) {
 			CheckImmutable();
 
 			int size = Blocks.Count;
 			int start = 0;
 			for (int i = 0; i < size; ++i) {
-				IIndexBlock block = Blocks[i];
+				IIndexBlock<T> block = Blocks[i];
 				int bsize = block.Count;
 				if (index >= start && index <= start + bsize) {
 					InsertIntoBlock(value, i, block, index - start);
@@ -526,21 +526,21 @@ namespace Deveel.Data.Index {
 			throw new ArgumentOutOfRangeException("index");
 		}
 
-		public void Add(int value) {
+		public void Add(T value) {
 			CheckImmutable();
 
 			int size = Blocks.Count;
-			IIndexBlock block = Blocks[size - 1];
+			IIndexBlock<T> block = Blocks[size - 1];
 			InsertIntoBlock(value, size - 1, block, block.Count);
 		}
 
-		public int RemoveAt(int index) {
+		public T RemoveAt(int index) {
 			CheckImmutable();
 
 			int size = Blocks.Count;
 			int start = 0;
 			for (int i = 0; i < size; ++i) {
-				IIndexBlock block = Blocks[i];
+				IIndexBlock<T> block = Blocks[i];
 				int bsize = block.Count;
 				if (index >= start && index <= start + bsize) {
 					return RemoveFromBlock(i, block, index - start);
@@ -550,7 +550,7 @@ namespace Deveel.Data.Index {
 			throw new ArgumentOutOfRangeException("index");
 		}
 
-		public bool Contains(int value) {
+		public bool Contains(T value) {
 			int blockIndex = FindLastBlock(value);
 
 			if (blockIndex < 0)
@@ -558,13 +558,13 @@ namespace Deveel.Data.Index {
 				return false;
 
 			// We got a block, so find out if it's in the block or not.
-			IIndexBlock block = Blocks[blockIndex];
+			IIndexBlock<T> block = Blocks[blockIndex];
 
 			// Find, if not there then return false.
 			return block.SearchLast(value) >= 0;
 		}
 
-		public void InsertSort(int value) {
+		public void InsertSort(T value) {
 			CheckImmutable();
 
 			int blockIndex = FindLastBlock(value);
@@ -579,7 +579,7 @@ namespace Deveel.Data.Index {
 			}
 
 			// We got a block, so find out if it's in the block or not.
-			IIndexBlock block = Blocks[blockIndex];
+			IIndexBlock<T> block = Blocks[blockIndex];
 
 			// The point to insert in the block,
 			int i = block.SearchLast(value);
@@ -595,7 +595,7 @@ namespace Deveel.Data.Index {
 			InsertIntoBlock(value, blockIndex, block, i);
 		}
 
-		public bool UniqueInsertSort(int value) {
+		public bool UniqueInsertSort(T value) {
 			CheckImmutable();
 
 			int blockIndex = FindLastBlock(value);
@@ -610,7 +610,7 @@ namespace Deveel.Data.Index {
 			}
 
 			// We got a block, so find out if it's in the block or not.
-			IIndexBlock block = Blocks[blockIndex];
+			IIndexBlock<T> block = Blocks[blockIndex];
 
 			// The point to insert in the block,
 			int i = block.SearchLast(value);
@@ -628,7 +628,7 @@ namespace Deveel.Data.Index {
 			return true;
 		}
 
-		public bool RemoveSort(int value) {
+		public bool RemoveSort(T value) {
 			CheckImmutable();
 
 			int blockIndex = FindLastBlock(value);
@@ -643,7 +643,7 @@ namespace Deveel.Data.Index {
 			}
 
 			// We got a block, so find out if it's in the block or not.
-			IIndexBlock block = Blocks[blockIndex];
+			IIndexBlock<T> block = Blocks[blockIndex];
 
 			// The point to remove the block,
 			int i = block.SearchLast(value);
@@ -654,15 +654,15 @@ namespace Deveel.Data.Index {
 			}
 
 			// Remove value into the block,
-			int valRemoved = RemoveFromBlock(blockIndex, block, i);
-			if (value != valRemoved)
+			T valRemoved = RemoveFromBlock(blockIndex, block, i);
+			if (value.CompareTo(valRemoved) != 0)
 				throw new ApplicationException("Incorrect value removed.");
 
 			// Value removed so return true.
 			return true;
 		}
 
-		public bool Contains(object key, IIndexComparer comparer) {
+		public bool Contains(object key, IIndexComparer<T> comparer) {
 			int blockIndex = FindBlockContaining(key, comparer);
 
 			if (blockIndex < 0)
@@ -670,13 +670,13 @@ namespace Deveel.Data.Index {
 				return false;
 
 			// We got a block, so find out if it's in the block or not.
-			IIndexBlock block = Blocks[blockIndex];
+			IIndexBlock<T> block = Blocks[blockIndex];
 
 			// Find, if not there then return false.
 			return block.BinarySearch(key, comparer) >= 0;
 		}
 
-		public void InsertSort(object key, int value, IIndexComparer comparer) {
+		public void InsertSort(object key, T value, IIndexComparer<T> comparer) {
 			CheckImmutable();
 
 			int blockIndex = FindLastBlock(key, comparer);
@@ -691,7 +691,7 @@ namespace Deveel.Data.Index {
 			}
 
 			// We got a block, so find out if it's in the block or not.
-			IIndexBlock block = Blocks[blockIndex];
+			IIndexBlock<T> block = Blocks[blockIndex];
 
 			// The point to insert in the block,
 			int i = block.SearchLast(key, comparer);
@@ -707,7 +707,7 @@ namespace Deveel.Data.Index {
 			InsertIntoBlock(value, blockIndex, block, i);
 		}
 
-		public int RemoveSort(object key, int value, IIndexComparer comparer) {
+		public T RemoveSort(object key, T value, IIndexComparer<T> comparer) {
 			CheckImmutable();
 
 			// Find the range of blocks that the value is in.
@@ -719,7 +719,7 @@ namespace Deveel.Data.Index {
 				// Not found in a block,
 				throw new ApplicationException("Value (" + key + ") was not found in the list.");
 
-			IIndexBlock block = Blocks[blockIndex];
+			IIndexBlock<T> block = Blocks[blockIndex];
 			int i = block.IndexOf(value);
 			while (i == -1) {
 				// If not found, go to next block
@@ -736,7 +736,7 @@ namespace Deveel.Data.Index {
 			return RemoveFromBlock(blockIndex, block, i);
 		}
 
-		public int SearchLast(object key, IIndexComparer comparer) {
+		public int SearchLast(object key, IIndexComparer<T> comparer) {
 			int blockIndex = FindLastBlock(key, comparer);
 			int sr;
 
@@ -746,7 +746,7 @@ namespace Deveel.Data.Index {
 				sr = -1;
 			} else {
 				// We got a block, so find out if it's in the block or not.
-				IIndexBlock block = Blocks[blockIndex];
+				IIndexBlock<T> block = Blocks[blockIndex];
 
 				// Try and find it in the block,
 				sr = block.SearchLast(key, comparer);
@@ -754,47 +754,47 @@ namespace Deveel.Data.Index {
 
 			int offset = 0;
 			for (int i = 0; i < blockIndex; ++i) {
-				IIndexBlock block = Blocks[i];
+				IIndexBlock<T> block = Blocks[i];
 				offset += block.Count;
 			}
 
 			return sr >= 0 ? offset + sr : -offset + sr;
 		}
 
-		public int SearchFirst(object key, IIndexComparer comparer) {
-			int block_num = FindFirstBlock(key, comparer);
+		public int SearchFirst(object key, IIndexComparer<T> comparer) {
+			int blockNum = FindFirstBlock(key, comparer);
 			int sr;
 
-			if (block_num < 0) {
+			if (blockNum < 0) {
 				// Guarenteed not found in any blocks so return start of insert block
-				block_num = (-(block_num + 1)); // - 1;
+				blockNum = (-(blockNum + 1)); // - 1;
 				sr = -1;
 			} else {
 				// We got a block, so find out if it's in the block or not.
-				IIndexBlock block = Blocks[block_num];
+				IIndexBlock<T> block = Blocks[blockNum];
 
 				// Try and find it in the block,
 				sr = block.SearchFirst(key, comparer);
 			}
 
 			int offset = 0;
-			for (int i = 0; i < block_num; ++i) {
-				IIndexBlock block = Blocks[i];
+			for (int i = 0; i < blockNum; ++i) {
+				IIndexBlock<T> block = Blocks[i];
 				offset += block.Count;
 			}
 
 			return sr >= 0 ? offset + sr : -offset + sr;
 		}
 
-		public IIndexEnumerator GetEnumerator() {
+		public IIndexEnumerator<T> GetEnumerator() {
 			return GetEnumerator(0, Count - 1);
 		}
 
-		public IIndexEnumerator GetEnumerator(int startOffset, int endOffset) {
+		public IIndexEnumerator<T> GetEnumerator(int startOffset, int endOffset) {
 			return new Enumerator(this, startOffset, endOffset);
 		}
 
-		IEnumerator<int> IEnumerable<int>.GetEnumerator() {
+		IEnumerator<T> IEnumerable<T>.GetEnumerator() {
 			return GetEnumerator();
 		}
 
@@ -804,19 +804,19 @@ namespace Deveel.Data.Index {
 
 		#region Enumerator
 
-		class Enumerator : IIndexEnumerator {
-			private readonly BlockIndexBase index;
+		class Enumerator : IIndexEnumerator<T> {
+			private readonly BlockIndexBase<T> index;
 			private readonly int startOffset;
 			private int endOffset;
 
-			private IIndexBlock currentBlock;
+			private IIndexBlock<T> currentBlock;
 			private int currentBlockSize;
 			private int blockIndex;
 			private int blockOffset;
 
 			private int currentOffset;
 
-			public Enumerator(BlockIndexBase index, int startOffset, int endOffset) {
+			public Enumerator(BlockIndexBase<T> index, int startOffset, int endOffset) {
 				this.index = index;
 				this.startOffset = startOffset;
 				this.endOffset = endOffset;
@@ -828,7 +828,7 @@ namespace Deveel.Data.Index {
 				int size = index.Blocks.Count;
 				int start = 0;
 				for (blockIndex = 0; blockIndex < size; ++blockIndex) {
-					IIndexBlock block = index.Blocks[blockIndex];
+					IIndexBlock<T> block = index.Blocks[blockIndex];
 					int bsize = block.Count;
 					if (offset < start + bsize) {
 						blockOffset = offset - start;
@@ -876,7 +876,7 @@ namespace Deveel.Data.Index {
 				}
 			}
 
-			public int Current {
+			public T Current {
 				get { return currentBlock[blockOffset]; }
 			}
 

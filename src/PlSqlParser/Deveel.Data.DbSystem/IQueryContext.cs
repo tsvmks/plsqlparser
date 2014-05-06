@@ -20,7 +20,7 @@ namespace Deveel.Data.DbSystem {
 
 		void ClearCache();
 
-		Table GetCachedNode(long id);
+		ITable GetCachedNode(long id);
 
 		void PutCachedNode(long id, ITable table);
 

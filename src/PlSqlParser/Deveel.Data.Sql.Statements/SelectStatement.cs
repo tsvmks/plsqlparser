@@ -46,7 +46,7 @@ namespace Deveel.Data.Sql.Statements {
 			if (IsIdentitySelect(selectStatement.SelectExpression)) {
 				selectStatement.SelectExpression.Columns.RemoveAt(0);
 				FromTable fromTable = ((IList<FromTable>)selectStatement.SelectExpression.From.AllTables)[0];
-				var idExp = Expression.FunctionCall("identity", new FunctionArgument(Expression.Constant(DataObject.String(fromTable.Name.ToString()))));
+				var idExp = Expression.FunctionCall("identity", Expression.Constant(DataObject.String(fromTable.Name.ToString())));
 				selectStatement.SelectExpression.Columns.Add(new SelectColumn(idExp));
 			}
 

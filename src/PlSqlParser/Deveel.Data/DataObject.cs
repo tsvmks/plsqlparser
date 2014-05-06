@@ -287,5 +287,18 @@ namespace Deveel.Data {
 		public static DataObject Number(int value) {
 			return new DataObject(PrimitiveTypes.Numeric(SqlType.Integer), (Number)value);
 		}
+
+		public static DataObject Date(DateTime value) {
+			return new DataObject(PrimitiveTypes.Date(), value);
+		}
+
+		public static DataObject Now(bool utc) {
+			var date = utc ? DateTime.UtcNow : DateTime.Now;
+			return Date(date);
+		}
+
+		public static DataObject Now() {
+			return Now(true);
+		}
 	}
 }

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 
 using Deveel.Data.DbSystem;
+using Deveel.Data.Sql;
 
 namespace Deveel.Data.Expressions {
 	public sealed class FunctionCallExpression : Expression {

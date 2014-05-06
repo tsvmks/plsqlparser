@@ -26,6 +26,13 @@ class PlSql : PlSqlConstants {
             && ANALYTIC_FUNCTION_NAMES.Contains(GetToken(1).image.ToUpper());
     }
 
+        protected bool SeeLastRef(String s) {
+                if (lastObjectReference == null)
+                        return false;
+
+                return String.Equals(s, lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase);
+        }
+
         public void Reset() {
         }
 
@@ -3645,7 +3652,7 @@ JoinType JoinType():
     mcc_consume_token(154);
     query = Select();
     mcc_consume_token(155);
-          exp = Expression.FunctionCall("exists", ParserUtil.FunctionArgument(query));
+          exp = Expression.FunctionCall("exists", Expression.Query(query));
         if (isNot)
         exp = Expression.Not(exp);
         {return exp;}
@@ -4148,7 +4155,7 @@ JoinType JoinType():
     mcc_consume_token(K_AS);
     BasicDataTypeDefinition();
     mcc_consume_token(155);
-          {return Expression.FunctionCall("cast", ParserUtil.FunctionArgument(exp));}
+          {return Expression.FunctionCall("cast", exp);}
     throw new Exception("Missing return statement in function");
   }
 
@@ -4223,19 +4230,19 @@ JoinType JoinType():
   ObjectName name;
   string dateTimeField;
   Expression exp = null;
-  List<FunctionArgument> args = new List<FunctionArgument>();
+  List<Expression> args = new List<Expression>();
   bool isAll = false;
   bool distinct = false;
     name = FunctionReference();
-    if ("TRIM".Equals(lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase)) {
+    if (SeeLastRef("TRIM")) {
       args = TrimArguments();
-    } else if ("EXTRACT".Equals(lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase)) {
+    } else if (SeeLastRef("EXTRACT")) {
       mcc_consume_token(154);
       dateTimeField = DatetimeField();
-                                                  args.Add(new FunctionArgument(Expression.Constant(ParserUtil.String(dateTimeField))));
+                                                  args.Add(Expression.Constant(ParserUtil.String(dateTimeField)));
       mcc_consume_token(K_FROM);
       exp = SQLSimpleExpression();
-                                                      args.Add(new FunctionArgument(exp));
+                                                      args.Add(exp);
       mcc_consume_token(155);
     } else {
       switch ((mcc_ntk==-1)?mcc_mntk():mcc_ntk) {
@@ -4275,7 +4282,7 @@ JoinType JoinType():
             switch ((mcc_ntk==-1)?mcc_mntk():mcc_ntk) {
             case 166:
               mcc_consume_token(166);
-                exp = Expression.Constant(ParserUtil.String("*")); args.Add(new FunctionArgument(exp));
+                exp = Expression.Constant(ParserUtil.String("*")); args.Add(exp);
               break;
             default:
               mcc_la1[231] = mcc_gen;
@@ -4305,9 +4312,9 @@ JoinType JoinType():
     throw new Exception("Missing return statement in function");
   }
 
-  public List<FunctionArgument> FunctionArgumentList() {
-  List<FunctionArgument> args = new List<FunctionArgument>();
-  FunctionArgument arg;
+  public List<Expression> FunctionArgumentList() {
+  List<Expression> args = new List<Expression>();
+  Expression arg;
     arg = FunctionArgument();
                                args.Add(arg);
     while (true) {
@@ -4328,7 +4335,7 @@ JoinType JoinType():
     throw new Exception("Missing return statement in function");
   }
 
-  public FunctionArgument FunctionArgument() {
+  public Expression FunctionArgument() {
   Token t = null; Expression exp;
     if (mcc_2_57(2)) {
       t = mcc_consume_token(S_IDENTIFIER);
@@ -4337,35 +4344,35 @@ JoinType JoinType():
       ;
     }
     exp = SQLExpression();
-          {return new FunctionArgument(t != null ? t.image : null, exp);}
+          {return exp;}
     throw new Exception("Missing return statement in function");
   }
 
-  public List<FunctionArgument> TrimArguments() {
-  List<FunctionArgument> args = new List<FunctionArgument>();
+  public List<Expression> TrimArguments() {
+  List<Expression> args = new List<Expression>();
   Expression exp = null;
   Token t = null;
     mcc_consume_token(154);
     if (Regex.IsMatch(GetToken(1).image, "(?i)LEADING|TRAILING|BOTH")) {
       t = mcc_consume_token(S_IDENTIFIER);
-                                 args.Add(new FunctionArgument(Expression.Constant(ParserUtil.String(t.image))));
+                                 args.Add(Expression.Constant(ParserUtil.String(t.image)));
       if (mcc_2_58(1)) {
         exp = SQLSimpleExpression();
-                                                        args.Add(new FunctionArgument(exp));
+                                                        args.Add(exp);
       } else {
         ;
       }
       mcc_consume_token(K_FROM);
       exp = SQLSimpleExpression();
-                                                             args.Add(new FunctionArgument(exp));
+                                                             args.Add(exp);
     } else if (mcc_2_59(1)) {
       exp = SQLSimpleExpression();
-                                        args.Add(new FunctionArgument(exp));
+                                        args.Add(exp);
       switch ((mcc_ntk==-1)?mcc_mntk():mcc_ntk) {
       case K_FROM:
         mcc_consume_token(K_FROM);
         exp = SQLSimpleExpression();
-                                                      args.Add(new FunctionArgument(exp));
+                                                      args.Add(exp);
         break;
       default:
         mcc_la1[234] = mcc_gen;
@@ -4874,48 +4881,6 @@ JoinType JoinType():
     try { return !mcc_3_59(); }
     catch(LookaheadSuccess) { return true; }
     finally { mcc_save(58, xla); }
-  }
-
-  private bool mcc_3R_178() {
-    if (mcc_3R_62()) return true;
-    return false;
-  }
-
-  private bool mcc_3_50() {
-    if (mcc_3R_61()) return true;
-    return false;
-  }
-
-  private bool mcc_3R_177() {
-    if (mcc_3R_115()) return true;
-    return false;
-  }
-
-  private bool mcc_3R_176() {
-    if (mcc_scan_token(154)) return true;
-    Token xsp;
-    xsp = mcc_scanpos;
-    if (mcc_3_48()) {
-    mcc_scanpos = xsp;
-    if (mcc_3_49()) return true;
-    }
-    if (mcc_scan_token(155)) return true;
-    return false;
-  }
-
-  private bool mcc_3R_131() {
-    if (mcc_scan_token(164)) return true;
-    return false;
-  }
-
-  private bool mcc_3R_175() {
-    if (mcc_3R_197()) return true;
-    return false;
-  }
-
-  private bool mcc_3R_174() {
-    if (mcc_scan_token(K_NULL)) return true;
-    return false;
   }
 
   private bool mcc_3R_173() {
@@ -6189,15 +6154,15 @@ JoinType JoinType():
     return false;
   }
 
-  private bool mcc_3R_143() {
-    if (mcc_scan_token(156)) return true;
-    if (mcc_3R_64()) return true;
-    return false;
-  }
-
   private bool mcc_3_6() {
     if (mcc_3R_50()) return true;
     if (mcc_scan_token(158)) return true;
+    return false;
+  }
+
+  private bool mcc_3R_143() {
+    if (mcc_scan_token(156)) return true;
+    if (mcc_3R_64()) return true;
     return false;
   }
 
@@ -7407,12 +7372,12 @@ JoinType JoinType():
     Token xsp;
     xsp = mcc_scanpos;
     lookingAhead = true;
-    mcc_semLA = "TRIM".Equals(lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase);
+    mcc_semLA = SeeLastRef("TRIM");
     lookingAhead = false;
     if (!mcc_semLA || mcc_3R_206()) {
     mcc_scanpos = xsp;
     lookingAhead = true;
-    mcc_semLA = "EXTRACT".Equals(lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase);
+    mcc_semLA = SeeLastRef("EXTRACT");
     lookingAhead = false;
     if (!mcc_semLA || mcc_3R_207()) {
     mcc_scanpos = xsp;
@@ -7598,6 +7563,48 @@ JoinType JoinType():
 
   private bool mcc_3R_179() {
     if (mcc_3R_75()) return true;
+    return false;
+  }
+
+  private bool mcc_3R_178() {
+    if (mcc_3R_62()) return true;
+    return false;
+  }
+
+  private bool mcc_3_50() {
+    if (mcc_3R_61()) return true;
+    return false;
+  }
+
+  private bool mcc_3R_177() {
+    if (mcc_3R_115()) return true;
+    return false;
+  }
+
+  private bool mcc_3R_176() {
+    if (mcc_scan_token(154)) return true;
+    Token xsp;
+    xsp = mcc_scanpos;
+    if (mcc_3_48()) {
+    mcc_scanpos = xsp;
+    if (mcc_3_49()) return true;
+    }
+    if (mcc_scan_token(155)) return true;
+    return false;
+  }
+
+  private bool mcc_3R_131() {
+    if (mcc_scan_token(164)) return true;
+    return false;
+  }
+
+  private bool mcc_3R_175() {
+    if (mcc_3R_197()) return true;
+    return false;
+  }
+
+  private bool mcc_3R_174() {
+    if (mcc_scan_token(K_NULL)) return true;
     return false;
   }
 

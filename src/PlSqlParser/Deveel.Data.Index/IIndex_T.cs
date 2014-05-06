@@ -50,7 +50,7 @@ namespace Deveel.Data.Index {
 		/// Adds a value to the end of the index.
 		/// </summary>
 		/// <param name="value">The value to add.</param>
-		void Add(int value);
+		void Add(T value);
 
 		///<summary>
 		/// Inserts an element to the given position in the index.
@@ -147,7 +147,7 @@ namespace Deveel.Data.Index {
 		/// Returns <b>true</b> if the given <paramref name="key"/> is found,
 		/// otherwise <b>false</b>.
 		/// </returns>
-		bool Contains(object key, IIndexComparer comparer);
+		bool Contains(object key, IIndexComparer<T> comparer);
 
 		/// <summary>
 		/// Inserts the key/value pair into the index at the correct 
@@ -163,7 +163,7 @@ namespace Deveel.Data.Index {
 		/// This way, the sort is stable (the order of identical elements does 
 		/// not change).
 		/// </remarks>
-		void InsertSort(object key, T value, IIndexComparer comparer);
+		void InsertSort(object key, T value, IIndexComparer<T> comparer);
 
 		/// <summary>
 		/// Removes the key/value pair from the list at the correct 
@@ -176,7 +176,7 @@ namespace Deveel.Data.Index {
 		/// <returns>
 		/// Returns the index within the list of the value removed.
 		/// </returns>
-		int RemoveSort(object key, T value, IIndexComparer comparer);
+		T RemoveSort(object key, T value, IIndexComparer<T> comparer);
 
 		/// <summary>
 		/// Searches the last value for the given key.
@@ -188,7 +188,7 @@ namespace Deveel.Data.Index {
 		/// Returns the index of the last value in the set for the given
 		/// <paramref name="key"/>.
 		/// </returns>
-		int SearchLast(object key, IIndexComparer comparer);
+		int SearchLast(object key, IIndexComparer<T> comparer);
 
 		/// <summary>
 		/// Searches the first value for the given key.
@@ -200,7 +200,7 @@ namespace Deveel.Data.Index {
 		/// Returns the index of the first value in the set for the given
 		/// <paramref name="key"/>.
 		/// </returns>
-		int SearchFirst(object key, IIndexComparer comparer);
+		int SearchFirst(object key, IIndexComparer<T> comparer);
 
 		/// <summary>
 		/// Gets an object to enumerates all the element contained in
@@ -210,7 +210,7 @@ namespace Deveel.Data.Index {
 		/// Returns an instance of <see cref="IIndexEnumerator"/> that is
 		/// used to enumerate all elements in the index.
 		/// </returns>
-		new IIndexEnumerator GetEnumerator();
+		new IIndexEnumerator<T> GetEnumerator();
 
 		/// <summary>
 		/// Gets an object to enumerates the element contained in
@@ -224,6 +224,6 @@ namespace Deveel.Data.Index {
 		/// Returns an instance of <see cref="IIndexEnumerator"/> that is
 		/// used to enumerate all elements in the index.
 		/// </returns>
-		IIndexEnumerator GetEnumerator(int startOffset, int endOffset);
+		IIndexEnumerator<T> GetEnumerator(int startOffset, int endOffset);
 	}
 }

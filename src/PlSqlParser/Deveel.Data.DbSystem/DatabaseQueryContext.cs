@@ -18,35 +18,15 @@ using System;
 using Deveel.Data.Query;
 
 namespace Deveel.Data.DbSystem {
-	public class DatabaseQueryContext : IQueryContext {
+	public class DatabaseQueryContext : QueryContext {
+		private readonly IDatabaseConnection connection;
+
 		public DatabaseQueryContext(IDatabaseConnection connection) {
-			Connection = connection;
+			this.connection = connection;
 		}
 
-		public IDatabaseConnection Connection { get; private set; }
-
-		public void ClearCache() {
-			throw new NotImplementedException();
-		}
-
-		public Table GetCachedNode(long id) {
-			throw new NotImplementedException();
-		}
-
-		public void PutCachedNode(long id, ITable table) {
-			throw new NotImplementedException();
-		}
-
-		public void AddMarkedTable(string markName, ITable table) {
-			throw new NotImplementedException();
-		}
-
-		public ITable GetMarkedTable(string markerName) {
-			throw new NotImplementedException();
-		}
-
-		public ITable GetTable(ObjectName tableName) {
-			return Connection.GetTable(tableName);
+		public override IDatabaseConnection Connection {
+			get { return connection; }
 		}
 
 		internal IQueryPlanNode CreateViewQueryPlanNode(ObjectName viewName) {

@@ -207,6 +207,10 @@ return fun.Execute(((RoutineInvoke)ob), group, resolver, context);
 				return base.VisitCorrelatedVariable(expression);
 			}
 
+			protected override Expression VisitMethodCall(FunctionCallExpression expression) {
+				return expression;
+			}
+
 			public DataObject EvaluateExpression(Expression expression, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
 				this.group = group;
 				this.resolver = resolver;

@@ -1,5 +1,5 @@
 ﻿// 
-//  Copyright 2011  Deveel
+//  Copyright 2014  Deveel
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -13,9 +13,22 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Deveel.Data.Index {
-	public interface IIndexBlock : IIndexBlock<int> {
+	public static class IndexExtensions {
+		public static IEnumerable<T> AsEnumerable<T>(this IIndex<T> index) {
+			List<T> list = new List<T>(index.Count);
+			IIndexEnumerator<T> i = index.GetEnumerator();
+			// NOTE: We are guarenteed the size of the 'list' array matches the size
+			//   of input list.
+			while (i.MoveNext()) {
+				list.Add(i.Current);
+			}
+
+			return list;
+		}
 	}
 }

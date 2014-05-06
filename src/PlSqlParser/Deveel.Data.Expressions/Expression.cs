@@ -188,20 +188,20 @@ namespace Deveel.Data.Expressions {
 			return new FunctionCallExpression(obj, functionName, arguments);
 		}
 
-		public static Expression FunctionCall(ObjectName functionName, FunctionArgument arg) {
-			return FunctionCall(functionName, new[] { arg});
+		public static FunctionCallExpression FunctionCall(ObjectName functionName, IEnumerable<Expression> args) {
+			return new FunctionCallExpression(functionName, args);
 		}
 
-		public static FunctionCallExpression FunctionCall(ObjectName functionName, IEnumerable<FunctionArgument> args) {
-			throw new NotImplementedException();
+		public static FunctionCallExpression FunctionCall(ObjectName functionName, Expression arg) {
+			return FunctionCall(functionName, new Expression[] {arg});
 		}
 
-		public static FunctionCallExpression FunctionCall(string functionName, IEnumerable<FunctionArgument> args) {
+		public static FunctionCallExpression FunctionCall(string functionName, IEnumerable<Expression> args) {
 			return FunctionCall(ObjectName.Parse(functionName), args);
 		}
 
-		public static FunctionCallExpression FunctionCall(string functionName, FunctionArgument arg) {
-			return FunctionCall(functionName, new[] {arg});
+		public static FunctionCallExpression FunctionCall(string functionName, Expression arg) {
+			return FunctionCall(functionName, new Expression[] {arg});
 		}
 
 		public static Expression Conditional(Expression test, Expression ifTrue, Expression ifFalse) {

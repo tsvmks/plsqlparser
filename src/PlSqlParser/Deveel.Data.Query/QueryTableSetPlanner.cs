@@ -1179,7 +1179,8 @@ namespace Deveel.Data.Query {
 			// First perform all outer tables.
 			PlanAllOuterJoins();
 
-			return LogicalEvaluate(searchExpression.Expression);
+			Expression exp = searchExpression == null ? null : searchExpression.Expression;
+			return LogicalEvaluate(exp);
 		}
 
 		/// <summary>

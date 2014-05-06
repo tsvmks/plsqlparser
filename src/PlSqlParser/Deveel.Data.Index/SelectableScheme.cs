@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Text;
 
 using Deveel.Data.DbSystem;
-using Deveel.Math;
 
 namespace Deveel.Data.Index {
 	/// <summary>
@@ -44,13 +43,13 @@ namespace Deveel.Data.Index {
 	/// </para>
 	/// </remarks>
 	public abstract class SelectableScheme {
-		private static readonly BlockIndex EmptyList;
-		private static readonly BlockIndex OneList;
+		private static readonly BlockIndex<long> EmptyList;
+		private static readonly BlockIndex<long> OneList;
 
 		static SelectableScheme() {
-			EmptyList = new BlockIndex();
+			EmptyList = new BlockIndex<long>();
 			EmptyList.IsReadOnly = true;
-			OneList = new BlockIndex();
+			OneList = new BlockIndex<long>();
 			OneList.Add(0);
 			OneList.IsReadOnly = true;
 		}
@@ -168,7 +167,7 @@ namespace Deveel.Data.Index {
 		/// Returns a <see cref="BlockIndex"/> that represents the given 
 		/// <paramref name="rowSet"/> sorted in the order of this scheme.
 		/// </returns>
-		public IIndex GetOrderedIndex(IList<long> rowSet) {
+		public IIndex<long> GetOrderedIndex(IList<long> rowSet) {
 			// The length of the set to order
 			int rowSetLength = rowSet.Count;
 
@@ -181,7 +180,7 @@ namespace Deveel.Data.Index {
 
 			// This will be 'row set' sorted by its entry lookup.  This must only
 			// contain indices to rowSet entries.
-			BlockIndex newSet = new BlockIndex();
+			BlockIndex<long> newSet = new BlockIndex<long>();
 
 			if (rowSetLength <= 250000) {
 				// If the subset is less than or equal to 250,000 elements, we generate
@@ -194,7 +193,7 @@ namespace Deveel.Data.Index {
 				}
 
 				// The comparator we use to sort
-				IIndexComparer comparator = new SubsetIndexComparer(subsetList);
+				IIndexComparer<long> comparator = new SubsetIndexComparer(subsetList);
 
 				// Fill new_set with the set { 0, 1, 2, .... , row_set_length }
 				for (int i = 0; i < rowSetLength; ++i) {
@@ -206,7 +205,7 @@ namespace Deveel.Data.Index {
 				// This is the no additional heap use method to sorting the sub-set.
 
 				// The comparator we use to sort
-				IIndexComparer comparator = new SchemeIndexComparer(this, rowSet);
+				IIndexComparer<long> comparator = new SchemeIndexComparer(this, rowSet);
 
 				// Fill new_set with the set { 0, 1, 2, .... , row_set_length }
 				for (int i = 0; i < rowSetLength; ++i) {
@@ -247,7 +246,7 @@ namespace Deveel.Data.Index {
 
 			// Generates an IIndex which contains indices into 'rowSet' in
 			// sorted order.
-			IIndex newSet = GetOrderedIndex(rowSet);
+			IIndex<long> newSet = GetOrderedIndex(rowSet);
 
 			// Our 'new_set' should be the same size as 'rowSet'
 			if (newSet.Count != rowSet.Count) {
@@ -468,24 +467,24 @@ namespace Deveel.Data.Index {
 		/// <returns></returns>
 		public abstract IList<long> SelectRange(SelectableRange[] ranges);
 
-		private class SubsetIndexComparer : IIndexComparer {
+		private class SubsetIndexComparer : IIndexComparer<long> {
 			private readonly DataObject[] subsetList;
 
 			public SubsetIndexComparer(DataObject[] subsetList) {
 				this.subsetList = subsetList;
 			}
 
-			public int CompareValue(int index, DataObject val) {
+			public int CompareValue(long index, DataObject val) {
 				DataObject cell = subsetList[index];
 				return cell.CompareTo(val);
 			}
 
-			public int Compare(int index1, int index2) {
+			public int Compare(long index1, long index2) {
 				throw new NotSupportedException("Shouldn't be called!");
 			}
 		}
 
-		private class SchemeIndexComparer : IIndexComparer {
+		private class SchemeIndexComparer : IIndexComparer<long> {
 			private readonly SelectableScheme scheme;
 			private readonly IList<long> rowSet;
 
@@ -494,12 +493,12 @@ namespace Deveel.Data.Index {
 				this.rowSet = rowSet;
 			}
 
-			public int CompareValue(int index, DataObject val) {
-				DataObject cell = scheme.GetCellContents(rowSet[index]);
+			public int CompareValue(long index, DataObject val) {
+				DataObject cell = scheme.GetCellContents(rowSet[(int)index]);
 				return cell.CompareTo(val);
 			}
 
-			public int Compare(int index1, int index2) {
+			public int Compare(long index1, long index2) {
 				throw new NotSupportedException("Shouldn't be called!");
 			}
 		}

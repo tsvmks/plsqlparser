@@ -31,6 +31,13 @@ class PlSql {
             && ANALYTIC_FUNCTION_NAMES.Contains(GetToken(1).image.ToUpper());
     }
 
+	protected bool SeeLastRef(String s) {
+		if (lastObjectReference == null)
+			return false;
+
+		return String.Equals(s, lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase);
+	}
+
 	public void Reset() {
 	}
 }
@@ -1386,7 +1393,7 @@ Expression ExistsClause():
   TableSelectExpression query = null; }
 {
     ["NOT" { isNot = true; } ] "EXISTS" "(" query = Select() ")"
-	{ exp = Expression.FunctionCall("exists", ParserUtil.FunctionArgument(query));
+	{ exp = Expression.FunctionCall("exists", Expression.Query(query));
 	if (isNot)
 	exp = Expression.Not(exp);
 	return exp; }
@@ -1563,7 +1570,7 @@ Expression SQLCastExpression():
 { Expression exp; }
 {
     "CAST" "(" exp = SQLExpression() "AS" BasicDataTypeDefinition() ")"
-	{ return Expression.FunctionCall("cast", ParserUtil.FunctionArgument(exp)); }
+	{ return Expression.FunctionCall("cast", exp); }
 }
 
 void IntervalExpression():
@@ -1581,20 +1588,20 @@ Expression FunctionCall():
   ObjectName name;
   string dateTimeField;
   Expression exp = null; 
-  List<FunctionArgument> args = new List<FunctionArgument>(); 
+  List<Expression> args = new List<Expression>(); 
   bool isAll = false;
   bool distinct = false;
 }
 {
     name = FunctionReference() 
 	(
-        LOOKAHEAD({"TRIM".Equals(lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase)}) args = TrimArguments()
-      | LOOKAHEAD({"EXTRACT".Equals(lastObjectReference.ToString(), StringComparison.OrdinalIgnoreCase)}) 
-	    "(" dateTimeField = DatetimeField() { args.Add(new FunctionArgument(Expression.Constant(ParserUtil.String(dateTimeField)))); }
-		 "FROM" exp = SQLSimpleExpression() { args.Add(new FunctionArgument(exp));} ")"
+        LOOKAHEAD({SeeLastRef("TRIM")}) args = TrimArguments()
+      | LOOKAHEAD({SeeLastRef("EXTRACT")}) 
+	    "(" dateTimeField = DatetimeField() { args.Add(Expression.Constant(ParserUtil.String(dateTimeField))); }
+		 "FROM" exp = SQLSimpleExpression() { args.Add(exp);} ")"
       | [ "(" [["ALL" { isAll = true;} | "DISTINCT" { distinct = true; } | "UNIQUE"] 
 	  ( args =FunctionArgumentList() | 
-	  "*" { exp = Expression.Constant(ParserUtil.String("*")); args.Add(new FunctionArgument(exp)); } )] ")" ]
+	  "*" { exp = Expression.Constant(ParserUtil.String("*")); args.Add(exp); } )] ")" ]
     )
     // "all/distinct/unique/*" are permitted only with aggregate functions,
     // but this parser allows their use with any function.
@@ -1610,34 +1617,34 @@ ObjectName FunctionReference():
     { return name; }
 }
 
-List<FunctionArgument> FunctionArgumentList():
-{ List<FunctionArgument> args = new List<FunctionArgument>();
-  FunctionArgument arg; }
+List<Expression> FunctionArgumentList():
+{ List<Expression> args = new List<Expression>();
+  Expression arg; }
 {
     arg = FunctionArgument() { args.Add(arg); } 
 	("," arg = FunctionArgument() { args.Add(arg); } )*
 	{ return args; }
 }
 
-FunctionArgument FunctionArgument():
+Expression FunctionArgument():
 { Token t = null; Expression exp; }
 {
     [LOOKAHEAD(2) t = <S_IDENTIFIER> "=>"] 
 	exp = SQLExpression()
-	{ return new FunctionArgument(t != null ? t.image : null, exp); }
+	{ return exp; }
 }
 
-List<FunctionArgument> TrimArguments():
-{ List<FunctionArgument> args = new List<FunctionArgument>();
+List<Expression> TrimArguments():
+{ List<Expression> args = new List<Expression>();
   Expression exp = null;
   Token t = null; }
 {
     "(" ( LOOKAHEAD({Regex.IsMatch(GetToken(1).image, "(?i)LEADING|TRAILING|BOTH")})
-            t = <S_IDENTIFIER> { args.Add(new FunctionArgument(Expression.Constant(ParserUtil.String(t.image)))); } 
-			[ exp = SQLSimpleExpression() { args.Add(new FunctionArgument(exp)); }] 
-			"FROM" exp = SQLSimpleExpression() { args.Add(new FunctionArgument(exp)); }
-        | exp = SQLSimpleExpression() { args.Add(new FunctionArgument(exp)); } 
-		["FROM" exp = SQLSimpleExpression() { args.Add(new FunctionArgument(exp)); } ]
+            t = <S_IDENTIFIER> { args.Add(Expression.Constant(ParserUtil.String(t.image))); } 
+			[ exp = SQLSimpleExpression() { args.Add(exp); }] 
+			"FROM" exp = SQLSimpleExpression() { args.Add(exp); }
+        | exp = SQLSimpleExpression() { args.Add(exp); } 
+		["FROM" exp = SQLSimpleExpression() { args.Add(exp); } ]
         )
     ")"
 	{ return args; }

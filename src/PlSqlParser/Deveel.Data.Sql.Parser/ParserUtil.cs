@@ -59,14 +59,6 @@ namespace Deveel.Data.Sql.Parser {
 			return new DataObject(PrimitiveTypes.Null(), null);
 		}
 
-		public static FunctionArgument FunctionArgument(TableSelectExpression query) {
-			return new FunctionArgument(null);
-		}
-
-		public static FunctionArgument FunctionArgument(Expression expression) {
-			return new FunctionArgument(expression);
-		}
-
 		public static ObjectName ObjectName(string s) {
 			return Data.ObjectName.Parse(s);
 		}

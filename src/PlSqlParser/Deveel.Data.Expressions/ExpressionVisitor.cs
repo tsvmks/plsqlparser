@@ -135,6 +135,7 @@ namespace Deveel.Data.Expressions {
 
 		protected virtual Expression VisitMethodCall(FunctionCallExpression expression) {
 			Expression obj = Visit(expression.Object);
+
 			IEnumerable<Expression> args = VisitExpressionList(expression.Arguments.ToList().AsReadOnly());
 			if (obj != expression.Object || args != expression.Arguments) {
 				return Expression.FunctionCall(obj, expression.FunctionName, args);

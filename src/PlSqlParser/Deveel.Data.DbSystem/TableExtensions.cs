@@ -159,8 +159,60 @@ namespace Deveel.Data.DbSystem {
 
 		}
 
-		public static ITable Outer(this ITable table, ITable other) {
-			throw new NotImplementedException();
+		public static ITable Outer(this ITable theTable, ITable rightTable) {
+			// Form the row list for right hand table,
+			List<long> rowList = new List<long>((int) rightTable.RowCount);
+			IEnumerator<long> e = rightTable.GetRowEnumerator();
+			while (e.MoveNext()) {
+				rowList.Add(e.Current);
+			}
+
+			var t = (Table) theTable;
+
+			int colIndex = ((Table)rightTable).FindFieldName(t.GetResolvedVariable(0));
+			((Table)rightTable).SetToRowTableDomain(colIndex, rowList, t);
+
+			// This row set
+			List<long> thisTableSet = new List<long>((int) theTable.RowCount);
+			e = theTable.GetRowEnumerator();
+			while (e.MoveNext()) {
+				thisTableSet.Add(e.Current);
+			}
+
+			// 'rowList' is now the rows in this table that are in 'rtable'.
+			// Sort both 'thisTableSet' and 'rowList'
+			thisTableSet.Sort();
+			rowList.Sort();
+
+			// Find all rows that are in 'this_table_set' and not in 'row_list'
+			List<long> resultList = new List<long>(96);
+			int size = thisTableSet.Count;
+			int rowListIndex = 0;
+			int rowListSize = rowList.Count;
+			for (int i = 0; i < size; ++i) {
+				long thisVal = thisTableSet[i];
+				if (rowListIndex < rowListSize) {
+					long inVal = rowList[rowListIndex];
+					if (thisVal < inVal) {
+						resultList.Add(thisVal);
+					} else if (thisVal == inVal) {
+						while (rowListIndex < rowListSize &&
+							   rowList[rowListIndex] == inVal) {
+							++rowListIndex;
+						}
+					} else {
+						throw new ApplicationException("'this_val' > 'in_val'");
+					}
+				} else {
+					resultList.Add(thisVal);
+				}
+			}
+
+			// Return the new VirtualTable
+			VirtualTable table = new VirtualTable(t);
+			table.Set(t, resultList);
+
+			return table;
 		}
 
 		public static ITable ExhaustiveSelect(this ITable table, IQueryContext context, Expression expression) {
@@ -636,7 +688,7 @@ namespace Deveel.Data.DbSystem {
 			// cells in the large table's column, then we should include the row in our
 			// final result.
 
-			BlockIndex resultRows = new BlockIndex();
+			BlockIndex<long> resultRows = new BlockIndex<long>();
 			IEnumerator<long> e = smallTable.GetRowEnumerator();
 			Operator op = Operator.Equal;
 

@@ -49,7 +49,7 @@ namespace Deveel.Data.Index {
 		/// This is sorted from min to max (not sorted by row number - sorted 
 		/// by entity row value).
 		/// </remarks>
-		private IIndex list;
+		private IIndex<long> list;
 
 		/// <summary>
 		/// If this is true, then this <see cref="SelectableScheme"/> records additional 
@@ -62,7 +62,7 @@ namespace Deveel.Data.Index {
 		/// The <see cref="IIndexComparer"/> that we use to refer elements in the set to 
 		/// actual data objects.
 		/// </summary>
-		private IIndexComparer comparer;
+		private IIndexComparer<long> comparer;
 
 
 		/// <summary>
@@ -73,7 +73,7 @@ namespace Deveel.Data.Index {
 
 		public InsertSearch(ITable table, int column)
 			: base(table, column) {
-			list = new BlockIndex();
+			list = new BlockIndex<long>();
 
 			// The internal comparator that enables us to sort and lookup on the data
 			// in this column.
@@ -102,7 +102,7 @@ namespace Deveel.Data.Index {
 		/// <param name="column"></param>
 		/// <param name="list">A sorted list, with a low to high direction order, that is used to
 		/// set the scheme. This should not be used again after it is passed to this constructor.</param>
-		internal InsertSearch(ITable table, int column, IIndex list)
+		internal InsertSearch(ITable table, int column, IIndex<long> list)
 			: this(table, column) {
 			this.list = list;
 		}
@@ -122,7 +122,7 @@ namespace Deveel.Data.Index {
 				list = from.list;
 				debugReadOnlySetSize = list.Count;
 			} else {
-				list = new BlockIndex(from.list);
+				list = new BlockIndex<long>(from.list);
 			}
 
 			// Do we generate lookup caches?
@@ -170,7 +170,7 @@ namespace Deveel.Data.Index {
 				throw new ApplicationException("Tried to change an readOnly scheme.");
 
 			DataObject cell = GetCellContents(row);
-			int removed = list.RemoveSort(cell, row, comparer);
+			long removed = list.RemoveSort(cell, row, comparer);
 
 			if (removed != row) {
 				throw new ApplicationException("Removed value different than row asked to remove.  " +
@@ -250,7 +250,7 @@ namespace Deveel.Data.Index {
 			if (list == null) {
 				list = new List<long>((int)(end - start) + 2);
 			}
-			IIndexEnumerator i = this.list.GetEnumerator((int)start, (int)end);
+			IIndexEnumerator<long> i = this.list.GetEnumerator((int)start, (int)end);
 			while (i.MoveNext()) {
 				list.Add(i.Current);
 			}
@@ -258,26 +258,26 @@ namespace Deveel.Data.Index {
 		}
 
 		public override IList<long> SelectAll() {
-			return list.Cast<long>().ToList();
+			return list.AsEnumerable().ToList();
 		}
 
-		private class IndexComparerImpl : IIndexComparer {
+		private class IndexComparerImpl : IIndexComparer<long> {
 			private readonly InsertSearch scheme;
 
 			public IndexComparerImpl(InsertSearch scheme) {
 				this.scheme = scheme;
 			}
 
-			private int InternalCompare(int index, DataObject value) {
+			private int InternalCompare(long index, DataObject value) {
 				DataObject cell = scheme.GetCellContents(index);
 				return cell.CompareTo(value);
 			}
 
-			public int CompareValue(int index, DataObject val) {
+			public int CompareValue(long index, DataObject val) {
 				return InternalCompare(index, val);
 			}
 
-			public int Compare(int index1, int index2) {
+			public int Compare(long index1, long index2) {
 				DataObject cell = scheme.GetCellContents(index2);
 				return InternalCompare(index1, cell);
 			}
