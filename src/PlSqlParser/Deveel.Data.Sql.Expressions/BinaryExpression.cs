@@ -14,19 +14,18 @@
 //    limitations under the License.
 
 using System;
-using System.Text;
 
 using Deveel.Data.DbSystem;
 
 namespace Deveel.Data.Sql.Expressions {
 	public abstract class BinaryExpression : Expression {
-		public Expression First { get; private set; }
+		public Expression Left { get; private set; }
 
-		public Expression Second { get; private set; }
+		public Expression Right { get; private set; }
 
-		protected BinaryExpression(Expression first, Expression second) {
-			First = first;
-			Second = second;
+		protected BinaryExpression(Expression left, Expression right) {
+			Left = left;
+			Right = right;
 		}
 
 		internal virtual Operator Operator {

@@ -102,7 +102,7 @@ namespace Deveel.Data.Query {
 				var binary = (BinaryExpression) havingExpr;
 				Operator op = binary.Operator;
 				// If logical, split and filter the left and right expressions
-				Expression[] exps = {binary.First, binary.Second};
+				Expression[] exps = {binary.Left, binary.Right};
 				Expression newLeft = FilterHavingClause(exps[0], aggregateList, context);
 				Expression newRight = FilterHavingClause(exps[1], aggregateList, context);
 				Expression expr = Expression.Binary(newLeft, op.AsExpressionType(), newRight);

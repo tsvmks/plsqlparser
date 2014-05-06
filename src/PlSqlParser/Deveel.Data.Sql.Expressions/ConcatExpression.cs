@@ -20,8 +20,8 @@ using Deveel.Data.DbSystem;
 namespace Deveel.Data.Sql.Expressions {
 	[Serializable]
 	public sealed class ConcatExpression : BinaryExpression {
-		public ConcatExpression(Expression first, Expression second) 
-			: base(first, second) {
+		public ConcatExpression(Expression left, Expression right) 
+			: base(left, right) {
 		}
 
 		public override ExpressionType ExpressionType {

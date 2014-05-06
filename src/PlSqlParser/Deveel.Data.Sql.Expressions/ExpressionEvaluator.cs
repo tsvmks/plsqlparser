@@ -145,8 +145,8 @@ return fun.Execute(((RoutineInvoke)ob), group, resolver, context);
 
 			protected override Expression VisitBinary(BinaryExpression expression) {
 				var sortedEval = new[] {
-					new SortedEvalInfo(0, expression.First),
-					new SortedEvalInfo(1, expression.Second)
+					new SortedEvalInfo(0, expression.Left),
+					new SortedEvalInfo(1, expression.Right)
 				}
 					.OrderByDescending(x => x.Precedence)
 					.ToArray();
@@ -208,6 +208,18 @@ return fun.Execute(((RoutineInvoke)ob), group, resolver, context);
 			}
 
 			protected override Expression VisitMethodCall(FunctionCallExpression expression) {
+				return expression;
+			}
+
+			protected override Expression VisitConditional(ConditionalExpression expression) {
+				if (expression.Test.ReturnType(resolver, context) is BooleanType) {
+					var result = expression.Test.Evaluate(group, resolver, context).ToBoolean();
+					if (result == true)
+						return Visit(expression.IfTrue);
+					if (expression.IfFalse != null)
+						return Visit(expression.IfFalse);
+				}
+
 				return expression;
 			}
 

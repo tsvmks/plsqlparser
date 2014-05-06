@@ -92,7 +92,7 @@ namespace Deveel.Data.Query {
 		private static void UpdateRange(IQueryContext context, SelectableRangeSet range, DataColumnInfo field, Expression e) {
 			var binary = (BinaryExpression) e;
 			Operator op = binary.Operator;
-			Expression[] exps = {binary.First, binary.Second};
+			Expression[] exps = {binary.Left, binary.Right};
 
 			// Evaluate to an object
 			DataObject cell = exps[1].Evaluate(context);
@@ -127,7 +127,7 @@ namespace Deveel.Data.Query {
 					}
 				} else if (op == Operator.Or) {
 					// Split left and right of logical operator.
-					Expression[] exps = {binary.First, binary.Second};
+					Expression[] exps = {binary.Left, binary.Right};
 					// Calculate the range of the left and right
 					SelectableRangeSet left = new SelectableRangeSet();
 					CalcRange(context, field, left, exps[0]);

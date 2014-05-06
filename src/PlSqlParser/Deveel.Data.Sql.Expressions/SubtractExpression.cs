@@ -12,22 +12,23 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+
 using System;
 
 using Deveel.Data.DbSystem;
 
 namespace Deveel.Data.Sql.Expressions {
-	public sealed class EqualExpression : BinaryExpression {
-		public EqualExpression(Expression left, Expression right) 
+	public sealed class SubtractExpression : BinaryExpression {
+		public SubtractExpression(Expression left, Expression right) 
 			: base(left, right) {
 		}
 
 		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Equal; }
+			get { return ExpressionType.Subtract; }
 		}
 
 		internal override DataObject Evaluate(DataObject ob1, DataObject ob2, IGroupResolver @group, IVariableResolver resolver, IQueryContext context) {
-			return ob1.IsEqual(ob2);
+			return ob1.Subtract(ob2);
 		}
 	}
 }

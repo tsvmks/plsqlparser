@@ -21,12 +21,12 @@ using Deveel.Data.Sql.Types;
 namespace Deveel.Data.Sql.Expressions {
 	[Serializable]
 	public sealed class LikeExpression : BinaryExpression {
-		public LikeExpression(Expression first, Expression second) 
-			: this(first, second, null) {
+		public LikeExpression(Expression left, Expression right) 
+			: this(left, right, null) {
 		}
 
-		public LikeExpression(Expression first, Expression second, Expression escape) 
-			: base(first, second) {
+		public LikeExpression(Expression left, Expression right, Expression escape) 
+			: base(left, right) {
 			Escape = escape;
 		}
 

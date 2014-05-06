@@ -8,9 +8,9 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using Expressions;
+using Deveel.Data.Sql.Expressions;
 using Deveel.Data.Sql.Statements;
-using Types;
+using Deveel.Data.Sql.Types;
 
 class PlSql : PlSqlConstants {
     private ObjectName lastObjectReference = null;
@@ -4032,7 +4032,7 @@ JoinType JoinType():
       break;
     case K_NULL:
       mcc_consume_token(K_NULL);
-             exp = Expression.Constant(ParserUtil.Null());
+             exp = Expression.Constant(DataObject.Null);
       break;
     case K_CASE:
       exp = SQLCaseExpression();
@@ -4107,7 +4107,7 @@ JoinType JoinType():
         mcc_consume_token(K_THEN);
         ifFalse = SQLSimpleExpression();
                     exp1 = Expression.Conditional(test, ifTrue, ifFalse);
-                        if (exp != null) exp = Expression.Or(exp, exp1);
+                        if (exp != null) exp = Expression.Conditional(exp1, ifTrue, exp);
                         else exp = exp1;
       }label_39: ;
       
@@ -4126,7 +4126,7 @@ JoinType JoinType():
         mcc_consume_token(K_THEN);
         ifTrue = SQLSimpleExpression();
                         exp1 = Expression.Conditional(test, ifTrue);
-                        if (exp != null) exp = Expression.Or(exp, exp1);
+                        if (exp != null) exp = Expression.Conditional(exp1, ifTrue, exp);
                         else exp = exp1;
       }label_40: ;
       
@@ -4135,7 +4135,7 @@ JoinType JoinType():
     case K_ELSE:
       mcc_consume_token(K_ELSE);
       ifFalse = SQLSimpleExpression();
-
+                                              exp = Expression.Conditional(Expression.Not(exp), ifFalse);
       break;
     default:
       mcc_la1[223] = mcc_gen;

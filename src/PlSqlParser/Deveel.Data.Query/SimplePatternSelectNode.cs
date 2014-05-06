@@ -49,11 +49,11 @@ namespace Deveel.Data.Query {
 			var binary = (BinaryExpression) expression;
 
 			// Perform the pattern search expression on the table.			
-			ObjectName lhsVar = binary.First.AsVariable();
+			ObjectName lhsVar = binary.Left.AsVariable();
 			if (lhsVar != null) {
 				// LHS is a simple variable so do a simple select
 				Operator op = binary.Operator;
-				return t.SimpleSelect(context, lhsVar, op, binary.Second);
+				return t.SimpleSelect(context, lhsVar, op, binary.Right);
 			}
 
 			// LHS must be a constant so we can just evaluate the expression

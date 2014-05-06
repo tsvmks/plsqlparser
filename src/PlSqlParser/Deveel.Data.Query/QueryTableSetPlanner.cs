@@ -573,7 +573,7 @@ namespace Deveel.Data.Query {
 				Operator op = binary.Operator;
 
 				// Split the expression
-				Expression[] exps = { binary.First, binary.Second };
+				Expression[] exps = { binary.Left, binary.Right };
 
 				// The single var
 				ObjectName singleVar;
@@ -649,7 +649,7 @@ namespace Deveel.Data.Query {
 			// may require that a join occurs.
 			foreach (Expression expr in patternExprs) {
 				var binary = (BinaryExpression) expr;
-				Expression[] exps = {binary.First, binary.Second};
+				Expression[] exps = {binary.Left, binary.Right};
 
 				// If the LHS is a single variable and the RHS is a constant then
 				// the conditions are right for a simple pattern search.
@@ -699,7 +699,7 @@ namespace Deveel.Data.Query {
 					isExhaustive = true;
 				} else {
 					// Split the expression.
-					Expression[] exps ={binary.First, binary.Second};
+					Expression[] exps ={binary.Left, binary.Right};
 					// Check that the left is a simple enough variable reference
 					ObjectName leftVar = exps[0].AsVariable();
 					if (leftVar == null)
@@ -782,7 +782,7 @@ namespace Deveel.Data.Query {
 			// For each single variable expression
 			foreach (Expression expr in multiVars) {
 				var binary = (BinaryExpression) expr;
-				Expression[] exps = {binary.First, binary.Second};
+				Expression[] exps = {binary.Left, binary.Right};
 
 				// Get the list of variables in the left hand and right hand side
 				ObjectName lhsVar = exps[0].AsVariable();
@@ -1016,7 +1016,7 @@ namespace Deveel.Data.Query {
 				if (lastOp == Operator.Or) {
 					// parsing an OR block
 					// Split left and right of logical operator.
-					Expression[] exps = {binaryExp.First, binaryExp.Second};
+					Expression[] exps = {binaryExp.Left, binaryExp.Right};
 					// If we are an 'or' then evaluate left and right and union the
 					// result.
 
@@ -1363,7 +1363,7 @@ namespace Deveel.Data.Query {
 			public override void AddToPlanTree() {
 				var binaryExp = (BinaryExpression) expression;
 				Operator op = binaryExp.Operator;
-				Expression[] exps = {binaryExp.First, binaryExp.Second};
+				Expression[] exps = {binaryExp.Left, binaryExp.Right};
 				ObjectName leftVar = exps[0].AsVariable();
 				IQueryPlanNode rightPlan = exps[1].AsQueryPlanNode();
 
@@ -1408,7 +1408,7 @@ namespace Deveel.Data.Query {
 				var binaryExp = (BinaryExpression) expression;
 
 				// Get the expression with the multiple variables
-				Expression[] exps = {binaryExp.First, binaryExp.Second};
+				Expression[] exps = {binaryExp.Left, binaryExp.Right};
 
 				// Get the list of variables in the left hand and right hand side
 				ObjectName lhsVar = exps[0].AsVariable();

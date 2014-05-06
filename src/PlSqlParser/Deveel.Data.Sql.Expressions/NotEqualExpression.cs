@@ -20,8 +20,8 @@ using Deveel.Data.DbSystem;
 namespace Deveel.Data.Sql.Expressions {
 	[Serializable]
 	public sealed class NotEqualExpression : BinaryExpression {
-		public NotEqualExpression(Expression first, Expression second) 
-			: base(first, second) {
+		public NotEqualExpression(Expression left, Expression right) 
+			: base(left, right) {
 		}
 
 		public override ExpressionType ExpressionType {

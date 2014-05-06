@@ -44,8 +44,8 @@ namespace Deveel.Data.Query {
 
 			protected override Expression VisitBinary(BinaryExpression expression) {
 				if (expression.Operator == op) {
-					list = expression.First.BreakByOperator(list, op);
-					list = expression.Second.BreakByOperator(list, op);
+					list = expression.Left.BreakByOperator(list, op);
+					list = expression.Right.BreakByOperator(list, op);
 				} else {
 					list.Add(expression);
 				}

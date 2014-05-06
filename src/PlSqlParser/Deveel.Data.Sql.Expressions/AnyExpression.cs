@@ -24,8 +24,8 @@ using Deveel.Data.Sql.Types;
 namespace Deveel.Data.Sql.Expressions {
 	[Serializable]
 	public sealed class AnyExpression : BinaryExpression {
-		public AnyExpression(Expression first, ExpressionType subType, Expression second) 
-			: base(first, second) {
+		public AnyExpression(Expression left, ExpressionType subType, Expression right) 
+			: base(left, right) {
 			AssertSubTypeIsRelational(subType);
 			SubType = subType;
 		}

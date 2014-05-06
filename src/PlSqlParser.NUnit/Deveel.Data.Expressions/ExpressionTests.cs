@@ -105,5 +105,34 @@ namespace Deveel.Data.Sql.Expressions {
 
 			Assert.AreEqual(4, exps.Count);
 		}
+
+		[Test]
+		public void SimpleConditional() {
+			var exp = SqlParser.SqlExpression("CASE 3 WHEN (1 + 2 = 3) THEN 1 END");
+
+			Assert.IsNotNull(exp);
+			Assert.IsInstanceOf<ConditionalExpression>(exp);
+
+			var condExp = (ConditionalExpression) exp;
+			Assert.IsInstanceOf<ConstantExpression>(condExp.IfTrue);
+			Assert.IsInstanceOf<SubsetExpression>(condExp.Test);
+			Assert.IsInstanceOf<ConstantExpression>(condExp.IfFalse);
+
+			var eval = condExp.Evaluate();
+			Assert.AreEqual(3, eval.ToNumber().ToInt32());
+		}
+
+		[Test]
+		public void ComplexConditional() {
+			var exp = SqlParser.SqlExpression("CASE 3 WHEN (1 + 2 = 3) THEN 'fail' WHEN (22 = 1) THEN 1 END");
+
+			Assert.IsNotNull(exp);
+			Assert.IsInstanceOf<ConditionalExpression>(exp);
+
+			var condExp = (ConditionalExpression)exp;
+
+			var eval = condExp.Evaluate();
+			Assert.AreEqual(3, eval.ToNumber().ToInt32());
+		}
 	}
 }

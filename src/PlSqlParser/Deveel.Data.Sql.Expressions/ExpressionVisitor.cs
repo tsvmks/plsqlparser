@@ -98,10 +98,10 @@ namespace Deveel.Data.Sql.Expressions {
 		}
 
 		protected virtual Expression VisitBinary(BinaryExpression expression) {
-			Expression left = Visit(expression.First);
-			Expression right = Visit(expression.Second);
+			Expression left = Visit(expression.Left);
+			Expression right = Visit(expression.Right);
 
-			if (left != expression.First || right != expression.Second)
+			if (left != expression.Left || right != expression.Right)
 				return Expression.Binary(left, expression.ExpressionType, right);
 
 			return expression;

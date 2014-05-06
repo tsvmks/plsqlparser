@@ -12,22 +12,19 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+
 using System;
 
 using Deveel.Data.DbSystem;
 
 namespace Deveel.Data.Sql.Expressions {
-	public sealed class EqualExpression : BinaryExpression {
-		public EqualExpression(Expression left, Expression right) 
-			: base(left, right) {
-		}
+	public interface IEvaluateContext {
+		IQueryContext QueryContext { get; }
 
-		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Equal; }
-		}
+		IGroupResolver GroupResolver { get; }
 
-		internal override DataObject Evaluate(DataObject ob1, DataObject ob2, IGroupResolver @group, IVariableResolver resolver, IQueryContext context) {
-			return ob1.IsEqual(ob2);
-		}
+		IVariableResolver VariableResolver { get; }
+
+		DataObject Result { get; set; }
 	}
 }

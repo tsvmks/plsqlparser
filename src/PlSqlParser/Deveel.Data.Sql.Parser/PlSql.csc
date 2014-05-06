@@ -1526,7 +1526,7 @@ Expression SQLPrimaryExpression():
   (
     t = <S_NUMBER> { exp = Expression.Constant(ParserUtil.Number(t.image)); }
   | t = <S_CHAR_LITERAL> { exp = Expression.Constant(ParserUtil.Unquote(t.image));}
-  | "NULL" { exp = Expression.Constant(ParserUtil.Null()); }
+  | "NULL" { exp = Expression.Constant(DataObject.Null); }
   | exp = SQLCaseExpression()
   | "(" (LOOKAHEAD(3) selectExpr = Select() { exp = Expression.Query(selectExpr); } | 
            exp = SQLExpression()) { exp = Expression.Subset(exp); } ")"
@@ -1550,18 +1550,18 @@ Expression SQLCaseExpression():
 		( "WHEN" test = SQLSimpleExpression() 
 		  "THEN" ifFalse = SQLSimpleExpression() 
 		  { exp1 = Expression.Conditional(test, ifTrue, ifFalse); 
-			if (exp != null) exp = Expression.Or(exp, exp1);
+			if (exp != null) exp = Expression.Conditional(exp1, ifTrue, exp);
 			else exp = exp1; } 
 		)*
       | ( "WHEN" test = SQLExpression() 
 	     "THEN" ifTrue = SQLSimpleExpression() 
 		 { 
 			exp1 = Expression.Conditional(test, ifTrue);
-			if (exp != null) exp = Expression.Or(exp, exp1);
+			if (exp != null) exp = Expression.Conditional(exp1, ifTrue, exp);
 			else exp = exp1;
 		} )* 
 	)
-    ["ELSE" ifFalse = SQLSimpleExpression() { /* TODO: */ } ]
+    ["ELSE" ifFalse = SQLSimpleExpression() { exp = Expression.Conditional(Expression.Not(exp), ifFalse); } ]
     "END"
 	{ return exp; }
 }

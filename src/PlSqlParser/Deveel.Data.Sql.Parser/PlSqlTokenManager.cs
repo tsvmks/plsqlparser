@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Expressions;
+using Deveel.Data.Sql.Expressions;
 using Deveel.Data.Sql.Statements;
-using Types;
+using Deveel.Data.Sql.Types;
 
 internal  class PlSqlTokenManager : PlSqlConstants {
         public List<Token> tokenHistory = new List<Token>();
