@@ -18,7 +18,7 @@ using System.Text;
 using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Sql {
-	public sealed class SelectColumn {
+	public sealed class SelectColumn : ISqlElement, IPreparable {
 		public SelectColumn(Expression expression, ObjectName alias) {
 			Alias = alias;
 			Expression = expression;
@@ -79,17 +79,21 @@ namespace Deveel.Data.Sql {
 
 		internal ObjectName InternalName { get; set; }
 
-		internal void DumpSqlTo(StringBuilder builder) {
-			Expression.DumpTo(builder);
+		public SelectColumn Prepare(IExpressionPreparer preparer) {
+			return new SelectColumn(Expression.Prepare(preparer), Alias);
+		}
+
+		void ISqlElement.ToString(ISqlWriter writer) {
+			writer.Write(Expression);
 
 			if (Alias != null) {
-				builder.Append(" AS ");
-				builder.Append(Alias);
+				writer.Write(" AS ");
+				writer.Write(Alias);
 			}
 		}
 
-		public SelectColumn Prepare(IExpressionPreparer preparer) {
-			return new SelectColumn(Expression.Prepare(preparer), Alias);
+		object IPreparable.Prepare(IExpressionPreparer preparer) {
+			return Prepare(preparer);
 		}
 	}
 }

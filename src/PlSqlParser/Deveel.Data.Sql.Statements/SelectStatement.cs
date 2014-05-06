@@ -111,23 +111,21 @@ namespace Deveel.Data.Sql.Statements {
 			*/
 		}
 
-		protected override void DumpTo(StringBuilder builder) {
-			SelectExpression.DumpSqlTo(builder);
+		protected override void WriteTo(ISqlWriter writer) {
+			writer.Write(SelectExpression);
 
 			if (OrderBy.Count > 0) {
-				builder.Append("ORDER BY ");
+				writer.Write("ORDER BY ");
 
 				var orderByCount = OrderBy.Count;
 				var i = -1;
 				foreach (var column in OrderBy) {
-					column.DumpSqlTo(builder);
+					writer.Write(column);
 
 					if (++i < orderByCount - 1)
-						builder.Append(", ");				
+						writer.Write(", ");				
 				}
 			}
-
-			base.DumpTo(builder);
 		}
 	}
 }

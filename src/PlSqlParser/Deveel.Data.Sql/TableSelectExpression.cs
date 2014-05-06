@@ -22,7 +22,7 @@ using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Sql {
 	[DebuggerDisplay("{ToString(), nq}")]
-	public sealed class TableSelectExpression : IPreparable {
+	public sealed class TableSelectExpression : IPreparable, ISqlElement {
 		private FilterExpression whereClause;
 		private bool whereSet;
 
@@ -106,8 +106,8 @@ namespace Deveel.Data.Sql {
 			return selectExp;
 		}
 
-		internal void DumpSqlTo(StringBuilder builder) {
-			builder.Append("SELECT ");
+		void ISqlElement.ToString(ISqlWriter writer) {
+			writer.Write("SELECT ");
 			if (Into != null) {
 				// TODO:
 			}
@@ -115,27 +115,27 @@ namespace Deveel.Data.Sql {
 			var colCount = Columns.Count;
 			int i = -1;
 			foreach (var column in Columns) {
-				column.DumpSqlTo(builder);
+				writer.Write(column);
 
 				if (++i < colCount - 1)
-					builder.Append(", ");
+					writer.Write(", ");
 			}
 
 			if (colCount > 0)
-				builder.Append(" ");
+				writer.Write(" ");
 
 			if (From != null) {
-				From.DumpSqlTo(builder);
+				writer.Write(From);
 			}
 
 			if (Where != null) {
-				builder.Append(" WHERE ");
-				Where.DumpSqlTo(builder);
+				writer.Write(" WHERE ");
+				writer.Write(Where);
 			}
 
 			if (Having != null) {
-				builder.Append(" HAVING ");
-				Having.DumpSqlTo(builder);
+				writer.Write(" HAVING ");
+				writer.Write(Having);
 			}
 		}
 	}

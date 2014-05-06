@@ -96,6 +96,7 @@
     <Compile Include="Deveel.Data.Sql.Expressions\FunctionCallExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\GreaterExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\GreaterOrEqualExpression.cs" />
+    <Compile Include="Deveel.Data.Sql.Expressions\IEvaluateContext.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\IExpressionPreparer.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\IExpressionVisitor.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\IPreparable.cs" />
@@ -173,9 +174,13 @@
     <Compile Include="Deveel.Data.Sql.Statements\IStatementPreparer.cs" />
     <Compile Include="Deveel.Data.Sql.Statements\StatementContainer.cs" />
     <Compile Include="Deveel.Data.Sql\FilterExpression.cs" />
+    <Compile Include="Deveel.Data.Sql\ISqlElement.cs" />
+    <Compile Include="Deveel.Data.Sql\ISqlWriter.cs" />
     <Compile Include="Deveel.Data.Sql\SqlParseException.cs" />
     <Compile Include="Deveel.Data.Sql\SqlQuery.cs" />
     <Compile Include="Deveel.Data.Sql\SqlQueryExecutor.cs" />
+    <Compile Include="Deveel.Data.Sql\SqlWriterExtensions.cs" />
+    <Compile Include="Deveel.Data.Sql\StringSqlWriter.cs" />
     <Compile Include="Deveel.Data.Transactions\ITransaction.cs" />
     <Compile Include="Deveel.Data.Sql.Types\ArrayType.cs" />
     <Compile Include="Deveel.Data.Sql.Types\CastUtil.cs" />

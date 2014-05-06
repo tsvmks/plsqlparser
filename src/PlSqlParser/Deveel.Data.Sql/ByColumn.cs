@@ -19,7 +19,7 @@ using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Sql {
 	[Serializable]
-	public sealed class ByColumn : IPreparable {
+	public sealed class ByColumn : IPreparable, ISqlElement {
 		public ByColumn(Expression exp, bool ascending) {
 			Expression = exp;
 			Ascending = ascending;
@@ -33,13 +33,6 @@ namespace Deveel.Data.Sql {
 
 		public bool Ascending { get; private set; }
 
-		internal void DumpSqlTo(StringBuilder builder) {
-			Expression.DumpTo(builder);
-
-			builder.Append(" ");
-			builder.Append(Ascending ? "ASC" : "DESC");
-		}
-
 		public ByColumn Prepare(IExpressionPreparer preparer) {
 			var exp = Expression;
 			if (exp != null)
@@ -49,6 +42,13 @@ namespace Deveel.Data.Sql {
 
 		object IPreparable.Prepare(IExpressionPreparer preparer) {
 			return Prepare(preparer);
+		}
+
+		void ISqlElement.ToString(ISqlWriter writer) {
+			writer.Write(Expression);
+
+			writer.Write(" ");
+			writer.Write(Ascending ? "ASC" : "DESC");
 		}
 	}
 }

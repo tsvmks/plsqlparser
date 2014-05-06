@@ -20,7 +20,7 @@ using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Sql {
 	[Serializable]
-	public sealed class FilterExpression {
+	public sealed class FilterExpression : ISqlElement, IPreparable {
 		public FilterExpression(Expression expression) {
 			if (expression == null)
 				throw new ArgumentNullException("expression");
@@ -38,8 +38,12 @@ namespace Deveel.Data.Sql {
 			return new FilterExpression(Expression.And(Expression, expression));
 		}
 
-		internal void DumpSqlTo(StringBuilder builder) {
-			Expression.DumpTo(builder);
+		void ISqlElement.ToString(ISqlWriter writer) {
+			writer.Write(Expression);
+		}
+
+		object IPreparable.Prepare(IExpressionPreparer preparer) {
+			return Prepare(preparer);
 		}
 	}
 }

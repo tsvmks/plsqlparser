@@ -14,32 +14,32 @@
 //    limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.IO;
 
-using Deveel.Data.Sql.Expressions;
+namespace Deveel.Data.Sql {
+	public sealed class StringSqlWriter : ISqlWriter {
+		private StringWriter writer;
 
-namespace Deveel.Data.Sql.Types {
-	public sealed class ArrayType : DataType {
-		public ArrayType()
-			: base("ARRAY", SqlType.Array) {
-		}
+		public int Indentation { get; set; }
 
-		internal override string ValueToString(object obj) {
-			var exps = (IEnumerable<Expression>) obj;
-			var list = new List<Expression>(exps);
+		public void Write(string s) {
+			if (writer == null)
+				writer = new StringWriter();
 
-			var sb = new StringBuilder();
-			sb.Append("(");
-			for (int i = 0; i < list.Count; i++) {
-				sb.Append(list[i]);
-
-				if (i < list.Count - 1)
-					sb.Append(", ");
+			for (int i = 0; i < Indentation; i++) {
+				writer.Write(' ');
 			}
 
-			sb.Append(")");
-			return sb.ToString();
+			writer.Write(s);
+		}
+
+		public void Dispose() {
+			writer.Dispose();
+			writer = null;
+		}
+
+		public override string ToString() {
+			return writer.ToString();
 		}
 	}
 }

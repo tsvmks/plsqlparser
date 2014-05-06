@@ -22,7 +22,7 @@ using Deveel.Data.Sql.Types;
 
 namespace Deveel.Data.Sql.Expressions {
 	[DebuggerDisplay("{ToString()}")]
-	public abstract class Expression {
+	public abstract class Expression : ISqlElement {
 		public abstract ExpressionType ExpressionType { get; }
 
 		internal int Precedence {
@@ -284,28 +284,28 @@ namespace Deveel.Data.Sql.Expressions {
 
 		#endregion
 
-		protected virtual void DumpToString(StringBuilder sb) {
+		void ISqlElement.ToString(ISqlWriter writer) {
+			WriteTo(writer);
+		}
+
+		protected virtual void WriteTo(ISqlWriter writer) {
+			var dump = new ExpressionStringWriter(writer);
+			dump.Dump(this);
 		}
 
 		public override string ToString() {
-			var builder = new StringBuilder();
-			var dump = new ExpressionStringDump(builder);
-			dump.Dump(this);
-			return builder.ToString();
+			var writer = new StringSqlWriter();
+			WriteTo(writer);
+			return writer.ToString();
 		}
 
-		internal void DumpTo(StringBuilder builder) {
-			var dump = new ExpressionStringDump(builder);
-			dump.Dump(this);
-		}
+		#region ExpressionStringWriter
 
-		#region ExpressionStringDump
+		class ExpressionStringWriter : ExpressionVisitor {
+			private readonly ISqlWriter writer;
 
-		class ExpressionStringDump : ExpressionVisitor {
-			private readonly StringBuilder builder;
-
-			public ExpressionStringDump(StringBuilder builder) {
-				this.builder = builder;
+			public ExpressionStringWriter(ISqlWriter writer) {
+				this.writer = writer;
 			}
 
 			public void Dump(Expression expression) {
@@ -313,41 +313,41 @@ namespace Deveel.Data.Sql.Expressions {
 			}
 
 			protected override Expression VisitBinary(BinaryExpression expression) {
-				expression.Left.DumpTo(builder);
-				builder.AppendFormat(" {0} ", expression.Operator.AsString());
-				expression.Right.DumpTo(builder);
+				expression.Left.WriteTo(writer);
+				writer.Write(" {0} ", expression.Operator.AsString());
+				expression.Right.WriteTo(writer);
 				return expression;
 			}
 
 			protected override Expression VisitConstant(ConstantExpression expression) {
-				builder.Append(expression.Value);
+				writer.Write(expression.Value);
 				return expression;
 			}
 
 			protected override SubsetExpression VisitSubset(SubsetExpression expression) {
-				builder.Append("(");
-				expression.Operand.DumpTo(builder);
-				builder.Append(")");
+				writer.Write("(");
+				expression.Operand.WriteTo(writer);
+				writer.Write(")");
 				return expression;
 			}
 
 			protected override Expression VisitVariable(VariableExpression expression) {
-				builder.AppendFormat(":{0}", expression.VariableName);
+				writer.Write(":{0}", expression.VariableName);
 				return expression;
 			}
 
 			protected override Expression VisitConditional(ConditionalExpression expression) {
-				builder.Append("CASE ");
-				expression.IfTrue.DumpTo(builder);
-				builder.Append(" WHEN ");
-				expression.Test.DumpTo(builder);
+				writer.Write("CASE ");
+				expression.IfTrue.WriteTo(writer);
+				writer.Write(" WHEN ");
+				expression.Test.WriteTo(writer);
 
 				if (expression.IfFalse != null) {
-					builder.Append(" THEN ");
-					expression.IfFalse.DumpTo(builder);
+					writer.Write(" THEN ");
+					expression.IfFalse.WriteTo(writer);
 				}
 
-				builder.Append(" END");
+				writer.Write(" END");
 
 				return expression;
 			}

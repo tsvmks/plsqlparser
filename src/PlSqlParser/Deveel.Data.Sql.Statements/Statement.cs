@@ -22,16 +22,13 @@ using Deveel.Data.Sql.Expressions;
 namespace Deveel.Data.Sql.Statements {
 	[Serializable]
 	[DebuggerDisplay("{ToString(), nq}")]
-	public abstract class Statement : IPreparable {
+	public abstract class Statement : IPreparable, ISqlElement {
 		private bool prepared;
 
 		protected Statement() {
 		}
 
 		public SqlQuery Query { get;  internal set; }
-
-		protected virtual void DumpTo(StringBuilder builder) {
-		}
 
 		public virtual Statement PrepareExpressions(IExpressionPreparer preparer) {
 			return this;
@@ -41,10 +38,18 @@ namespace Deveel.Data.Sql.Statements {
 			return PrepareExpressions(preparer);
 		}
 
+		protected virtual void WriteTo(ISqlWriter writer) {
+			
+		}
+
 		public override string ToString() {
-			var builder = new StringBuilder();
-			DumpTo(builder);
-			return builder.ToString();
+			var writer = new StringSqlWriter();
+			WriteTo(writer);
+			return writer.ToString();
+		}
+
+		void ISqlElement.ToString(ISqlWriter writer) {
+			WriteTo(writer);
 		}
 
 		public Statement PrepareStatement(IQueryContext context) {
