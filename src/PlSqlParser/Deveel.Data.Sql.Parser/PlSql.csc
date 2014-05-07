@@ -253,7 +253,7 @@ ObjectName BindVariable():
 		| ":" ( t1 = <S_NUMBER> { s = t1.image; }
 		| t1 = <S_IDENTIFIER> ["." t2 = <S_IDENTIFIER>] { s = t1.image; if (t2 != null) s += "." + t2.image; } )
   )
-  { return ParserUtil.ObjectName(s); }
+  { return (ParserUtil.ObjectName(s)); }
 }
 
 void AlterSession():
@@ -948,20 +948,23 @@ Expression PlSqlMultiplicativeExpression():
 }
 
 Expression PlSqlExponentExpression():
-{ Expression exp, otherExp = null;
-  ExpressionType op; }
+{ Expression exp, otherExp = null, finalExp = null; }
 {
     exp = PlSqlUnaryExpression() 
-	( "**" { op = ExpressionType.Exponent; } otherExp = PlSqlUnaryExpression() { exp = Expression.Binary(exp, op, otherExp); } )*
-	{ return exp; }
+	( "**" otherExp = PlSqlUnaryExpression() 
+	{ if (finalExp != null) finalExp = Expression.Exponent(finalExp, otherExp);
+	  else finalExp = Expression.Exponent(exp, otherExp); } )*
+	{ return finalExp; }
 }
 
 Expression PlSqlUnaryExpression():
 { Expression exp;
-  bool negative = false; }
+  bool negative = false, positive = false; }
 {
-    (("+" | "-" { negative = true; } ) exp = PlSqlPrimaryExpression())
-	{ if (negative) exp = Expression.Negative(exp); }
+    (("+" { positive = true; } | "-" { negative = true; } ) 
+	exp = PlSqlPrimaryExpression())
+	{ if (negative) exp = Expression.Negative(exp); 
+	  else if (positive) exp = Expression.Positive(exp); }
 |
     exp = PlSqlPrimaryExpression()
 	{ return exp; }
@@ -979,9 +982,9 @@ Expression PlSqlPrimaryExpression():
   | t = <S_CHAR_LITERAL> { exp = Expression.Constant(ParserUtil.Unquote(t.image)); }
   | "NULL" { exp = Expression.Constant(DataObject.Null); }
   | exp = SQLCaseExpression()
-  | "(" (LOOKAHEAD(3) selectExp = Select() { exp = Expression.Query(selectExp); } | 
-       exp = PlSqlExpression() { exp = Expression.Subset(exp); } ) ")"
-  | varBind = BindVariable() { exp = Expression.Variable(varBind); }
+  | "(" (LOOKAHEAD(3) selectExp = Select() { exp = Expression.Query(selectExp); } 
+  | exp = PlSqlExpression() { exp = Expression.Subset(exp); } ) ")"
+  | varBind = BindVariable() { exp = Expression.VariableRef(varBind); }
   | LOOKAHEAD(2) exp = SQLCastExpression()
   | LOOKAHEAD(IntervalExpression()) IntervalExpression()
   | LOOKAHEAD(2) (<S_IDENTIFIER> | "SQL") "%" ID("FOUND|NOTFOUND|ISOPEN|ROWCOUNT")
@@ -1530,7 +1533,7 @@ Expression SQLPrimaryExpression():
   | exp = SQLCaseExpression()
   | "(" (LOOKAHEAD(3) selectExpr = Select() { exp = Expression.Query(selectExpr); } | 
            exp = SQLExpression()) { exp = Expression.Subset(exp); } ")"
-  | varBind = BindVariable() { exp = Expression.Variable(varBind); }
+  | varBind = BindVariable() { exp = Expression.VariableRef(varBind); }
   | LOOKAHEAD(2) exp = SQLCastExpression()
   | LOOKAHEAD(IntervalExpression()) IntervalExpression()
   | LOOKAHEAD(OuterJoinExpression()) OuterJoinExpression()

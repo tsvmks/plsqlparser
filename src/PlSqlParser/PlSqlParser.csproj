@@ -74,6 +74,7 @@
     <Compile Include="Deveel.Data.DbSystem\VirtualTable.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\AddExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\AggregateExplorer.cs" />
+    <Compile Include="Deveel.Data.Sql.Expressions\AllExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\AndExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\AnyExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\BinaryExpression.cs" />
@@ -87,7 +88,6 @@
     <Compile Include="Deveel.Data.Sql.Expressions\EvaluationContext.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\ExponentExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\Expression.cs" />
-    <Compile Include="Deveel.Data.Sql.Expressions\ExpressionEvaluator.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\ExpressionExtensions.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\ExpressionPreparer.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\ExpressionReturnType.cs" />
@@ -97,9 +97,11 @@
     <Compile Include="Deveel.Data.Sql.Expressions\GreaterExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\GreaterOrEqualExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\IEvaluateContext.cs" />
+    <Compile Include="Deveel.Data.Sql.Expressions\IExpressionEvaluator.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\IExpressionPreparer.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\IExpressionVisitor.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\IPreparable.cs" />
+    <Compile Include="Deveel.Data.Sql.Expressions\IsExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\LikeExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\ModuloExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\MultiplyExpression.cs" />
@@ -171,6 +173,7 @@
     <Compile Include="Deveel.Data.Query\SubsetNode.cs" />
     <Compile Include="Deveel.Data.Query\TableExpressionFromSet.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\SubtractExpression.cs" />
+    <Compile Include="Deveel.Data.Sql.Expressions\VariableRefExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Statements\IStatementPreparer.cs" />
     <Compile Include="Deveel.Data.Sql.Statements\StatementContainer.cs" />
     <Compile Include="Deveel.Data.Sql\FilterExpression.cs" />
@@ -194,9 +197,8 @@
     <Compile Include="Deveel.Data\IStringObject.cs" />
     <Compile Include="Deveel.Data\Number.cs" />
     <Compile Include="Deveel.Data\NumberState.cs" />
-    <Compile Include="Deveel.Data.Sql.Expressions\SubQueryExpression.cs" />
+    <Compile Include="Deveel.Data.Sql.Expressions\QueryExpression.cs" />
     <Compile Include="Deveel.Data.Query\TableNameExplorer.cs" />
-    <Compile Include="Deveel.Data.Sql.Expressions\TypeIsExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\UnaryExpression.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\VariableExplorer.cs" />
     <Compile Include="Deveel.Data.Sql.Expressions\VariableExpression.cs" />
@@ -240,7 +242,6 @@
     <Compile Include="Deveel.Data\PatternSearch.cs" />
     <Compile Include="Deveel.Data\StringObject.cs" />
     <Compile Include="Deveel.Data\StringObjectExtensions.cs" />
-    <Compile Include="Deveel.Data\VariableBind.cs" />
     <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\BigDecimal.cs" />
     <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\BigInteger.cs" />
     <Compile Include="Deveel.Math\src\Deveel.Math\Deveel.Math\BitLevel.cs" />

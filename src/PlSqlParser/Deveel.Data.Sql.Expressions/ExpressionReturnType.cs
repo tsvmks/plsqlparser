@@ -47,9 +47,9 @@ namespace Deveel.Data.Sql.Expressions {
 				return expression;
 			}
 
-			protected override Expression VisitMethodCall(FunctionCallExpression expression) {
+			protected override Expression VisitFunctionCall(FunctionCallExpression expression) {
 				// TODO:
-				return base.VisitMethodCall(expression);
+				return base.VisitFunctionCall(expression);
 			}
 
 			protected override Expression VisitCorrelatedVariable(CorrelatedVariableExpression expression) {

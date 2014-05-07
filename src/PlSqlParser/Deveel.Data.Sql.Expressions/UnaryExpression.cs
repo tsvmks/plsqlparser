@@ -14,8 +14,6 @@
 //    limitations under the License.
 using System;
 
-using Deveel.Data.DbSystem;
-
 namespace Deveel.Data.Sql.Expressions {
 	public abstract class UnaryExpression : Expression {
 		protected UnaryExpression(Expression operand) {
@@ -24,6 +22,11 @@ namespace Deveel.Data.Sql.Expressions {
 
 		public Expression Operand { get; private set; }
 
-		internal abstract DataObject Evaluate(DataObject obj, IGroupResolver group, IVariableResolver resolver, IQueryContext context);
+		protected abstract DataObject EvaluateUnary(DataObject obj, IEvaluateContext context);
+
+		protected override DataObject OnEvaluate(IExpressionEvaluator evaluator) {
+			var ob = evaluator.Evaluate(Operand);
+			return EvaluateUnary(ob, evaluator.Context);
+		}
 	}
 }

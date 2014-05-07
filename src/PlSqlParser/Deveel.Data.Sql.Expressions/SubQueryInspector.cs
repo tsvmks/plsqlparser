@@ -32,9 +32,9 @@ namespace Deveel.Data.Sql.Expressions {
 				return hasSubQuery;
 			}
 
-			protected override Expression VisitSubQuery(SubQueryExpression expression) {
+			protected override Expression VisitQuery(QueryExpression expression) {
 				hasSubQuery = true;
-				return base.VisitSubQuery(expression);
+				return base.VisitQuery(expression);
 			}
 
 			protected override Expression VisitConstant(ConstantExpression expression) {

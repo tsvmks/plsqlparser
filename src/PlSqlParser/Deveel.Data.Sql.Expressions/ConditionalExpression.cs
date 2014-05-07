@@ -15,6 +15,7 @@
 using System;
 
 namespace Deveel.Data.Sql.Expressions {
+	[Serializable]
 	public sealed class ConditionalExpression : Expression {
 		public ConditionalExpression(Expression test, Expression ifTrue) 
 			: this(test, ifTrue, null) {
@@ -35,5 +36,29 @@ namespace Deveel.Data.Sql.Expressions {
 		public Expression IfTrue { get; private set; }
 
 		public Expression IfFalse { get; set; }
+
+		protected override void WriteTo(ISqlWriter writer) {
+			writer.Write("CASE ");
+			writer.Write(IfTrue);
+			writer.Write(" WHEN ");
+			writer.Write(Test);
+
+			if (IfFalse != null) {
+				writer.Write(" THEN ");
+				writer.Write(IfFalse);
+			}
+
+			writer.Write(" END");
+		}
+
+		protected override DataObject OnEvaluate(IExpressionEvaluator evaluator) {
+			var result = evaluator.Evaluate(Test).ToBoolean();
+			if (result == true)
+				return evaluator.Evaluate(IfTrue);
+			if (IfFalse != null)
+				return evaluator.Evaluate(IfFalse);
+
+			throw new InvalidOperationException();
+		}
 	}
 }

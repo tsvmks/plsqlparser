@@ -45,7 +45,7 @@ namespace Deveel.Data.Sql.Expressions {
 				return DoPrepare(expression);
 			}
 
-			protected override Expression VisitSubQuery(SubQueryExpression expression) {
+			protected override Expression VisitQuery(QueryExpression expression) {
 				return DoPrepare(expression);
 			}
 

@@ -12,21 +12,13 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+
 using System;
 
-using Deveel.Data.Sql;
-using Deveel.Data.Sql.Statements;
-
 namespace Deveel.Data.Sql.Expressions {
-	public sealed class SubQueryExpression : Expression {
-		public SubQueryExpression(TableSelectExpression select) {
-			SelectExpression = select;
-		}
+	public interface IExpressionEvaluator {
+		IEvaluateContext Context { get; }
 
-		public TableSelectExpression SelectExpression { get; private set; }
-
-		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Query; }
-		}
+		DataObject Evaluate(Expression expression);
 	}
 }

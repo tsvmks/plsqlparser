@@ -109,33 +109,45 @@ namespace Deveel.Data.Sql {
 		void ISqlElement.ToString(ISqlWriter writer) {
 			writer.Write("SELECT ");
 			if (Into != null) {
+				writer.Write("INTO ");
 				// TODO:
+
+				writer.WriteLine();
+			} else {
+				var colCount = Columns.Count;
+				int i = -1;
+				foreach (var column in Columns) {
+					writer.Write(column);
+
+					if (++i < colCount - 1)
+						writer.Write(", ");
+				}
+
+				if (colCount > 0)
+					writer.WriteLine();
 			}
-
-			var colCount = Columns.Count;
-			int i = -1;
-			foreach (var column in Columns) {
-				writer.Write(column);
-
-				if (++i < colCount - 1)
-					writer.Write(", ");
-			}
-
-			if (colCount > 0)
-				writer.Write(" ");
 
 			if (From != null) {
+				writer.Indent(4);
 				writer.Write(From);
+				writer.WriteLine();
+				writer.Deindent(4);
 			}
 
 			if (Where != null) {
-				writer.Write(" WHERE ");
+				writer.Indent(4);
+				writer.Write("WHERE ");
 				writer.Write(Where);
+				writer.WriteLine();
+				writer.Deindent(4);
 			}
 
 			if (Having != null) {
-				writer.Write(" HAVING ");
+				writer.Indent(4);
+				writer.Write("HAVING ");
 				writer.Write(Having);
+				writer.WriteLine();
+				writer.Deindent(4);
 			}
 		}
 	}

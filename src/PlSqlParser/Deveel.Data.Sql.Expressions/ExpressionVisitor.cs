@@ -31,10 +31,9 @@ namespace Deveel.Data.Sql.Expressions {
 				return null;
 
 			switch (exp.ExpressionType) {
-				case ExpressionType.Negate:
+				case ExpressionType.Negative:
+				case ExpressionType.Positive:
 				case ExpressionType.Not:
-				case ExpressionType.Cast:
-				case ExpressionType.TypeIs:
 					return VisitUnary((UnaryExpression) exp);
 				case ExpressionType.Add:
 				case ExpressionType.Subtract:
@@ -63,9 +62,9 @@ namespace Deveel.Data.Sql.Expressions {
 				case ExpressionType.CorrelatedVariable:
 					return VisitCorrelatedVariable((CorrelatedVariableExpression) exp);
 				case ExpressionType.Call:
-					return VisitMethodCall((FunctionCallExpression) exp);
+					return VisitFunctionCall((FunctionCallExpression) exp);
 				case ExpressionType.Query:
-					return VisitSubQuery((SubQueryExpression) exp);
+					return VisitQuery((QueryExpression) exp);
 				case ExpressionType.Subset:
 					return VisitSubset((SubsetExpression) exp);
 				default:
@@ -85,7 +84,7 @@ namespace Deveel.Data.Sql.Expressions {
 			return expression;
 		}
 
-		protected virtual Expression VisitSubQuery(SubQueryExpression expression) {
+		protected virtual Expression VisitQuery(QueryExpression expression) {
 			return expression;
 		}
 
@@ -107,14 +106,6 @@ namespace Deveel.Data.Sql.Expressions {
 			return expression;
 		}
 
-		protected virtual Expression VisitTypeIs(TypeIsExpression expression) {
-			Expression expr = Visit(expression.Expression);
-			if (expr != expression.Expression) {
-				return Expression.Is(expr, expression.TypeOperand);
-			}
-			return expression;
-		}
-
 		protected virtual Expression VisitConstant(ConstantExpression expression) {
 			return expression;
 		}
@@ -133,20 +124,21 @@ namespace Deveel.Data.Sql.Expressions {
 			return expression;
 		}
 
-		protected virtual Expression VisitMethodCall(FunctionCallExpression expression) {
+		protected virtual Expression VisitFunctionCall(FunctionCallExpression expression) {
 			Expression obj = Visit(expression.Object);
 
 			IEnumerable<Expression> args = VisitExpressionList(expression.Arguments.ToList().AsReadOnly());
 			if (obj != expression.Object || args != expression.Arguments) {
 				return Expression.FunctionCall(obj, expression.FunctionName, args);
 			}
+
 			return expression;
 		}
 
 		protected virtual ReadOnlyCollection<Expression> VisitExpressionList(ReadOnlyCollection<Expression> original) {
 			List<Expression> list = null;
 			for (int i = 0, n = original.Count; i < n; i++) {
-				Expression p = this.Visit(original[i]);
+				Expression p = Visit(original[i]);
 				if (list != null) {
 					list.Add(p);
 				} else if (p != original[i]) {

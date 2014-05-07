@@ -71,7 +71,7 @@ namespace Deveel.Data.Sql.Expressions {
 					b.Value.Equals(true));
 		}
 
-		internal override DataObject Evaluate(DataObject ob1, DataObject ob2, IGroupResolver @group, IVariableResolver resolver, IQueryContext context) {
+		protected override DataObject EvaluateBinary(DataObject ob1, DataObject ob2, IEvaluateContext context) {
 			var op = Operator;
 
 			if (ob2.DataType is QueryType) {
@@ -83,14 +83,14 @@ namespace Deveel.Data.Sql.Expressions {
 				if (list.Count > 0) {
 					// Set the correlated variables from the IVariableResolver
 					foreach (CorrelatedVariable variable in list) {
-						variable.SetFromResolver(resolver);
+						variable.SetFromResolver(context.VariableResolver);
 					}
 					// Clear the cache in the context
-					context.ClearCache();
+					context.QueryContext.ClearCache();
 				}
 
 				// Evaluate the plan,
-				ITable t = plan.Evaluate(context);
+				ITable t = plan.Evaluate(context.QueryContext);
 
 				// The ANY operation
 				Operator revPlainOp = op.Plain().Reverse();
@@ -103,7 +103,7 @@ namespace Deveel.Data.Sql.Expressions {
 				// Assume there are no matches
 				DataObject retVal = DataObject.BooleanFalse;
 				foreach (Expression exp in expList) {
-					DataObject expItem = exp.Evaluate(group, resolver, context);
+					DataObject expItem = exp.Evaluate(context.GroupResolver, context.VariableResolver, context.QueryContext);
 					// If null value, return null if there isn't otherwise a match found.
 					if (expItem.IsNull) {
 						retVal = DataObject.BooleanNull;

@@ -24,7 +24,5 @@ namespace Deveel.Data.Sql.Expressions {
 		IGroupResolver GroupResolver { get; }
 
 		IVariableResolver VariableResolver { get; }
-
-		DataObject Result { get; set; }
 	}
 }

@@ -16,23 +16,33 @@
 using System;
 using System.Diagnostics;
 
+using Deveel.Data.Sql;
 using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data {
 	[Serializable]
 	[DebuggerDisplay("{ToString()}")]
-	public sealed class VariableBind {
-		public VariableBind(string variableName) {
-			if (String.IsNullOrEmpty(variableName))
+	public sealed class VariableBind : ISqlElement {
+		public VariableBind(ObjectName variableName) {
+			if (variableName == null)
 				throw new ArgumentNullException("variableName");
 
 			VariableName = variableName;
 		}
 
-		public string VariableName { get; private set; }
+		public ObjectName VariableName { get; private set; }
 
 		public override string ToString() {
 			return String.Format(":{0}", VariableName);
+		}
+
+		object IPreparable.Prepare(IExpressionPreparer preparer) {
+			return this;
+		}
+
+		void ISqlElement.ToString(ISqlWriter writer) {
+			writer.Write(":");
+			writer.Write(VariableName);
 		}
 	}
 }

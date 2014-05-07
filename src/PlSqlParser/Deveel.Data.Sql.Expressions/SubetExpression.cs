@@ -15,8 +15,6 @@
 
 using System;
 
-using Deveel.Data.DbSystem;
-
 namespace Deveel.Data.Sql.Expressions {
 	[Serializable]
 	public sealed class SubsetExpression : UnaryExpression {
@@ -28,8 +26,14 @@ namespace Deveel.Data.Sql.Expressions {
 			get { return ExpressionType.Subset; }
 		}
 
-		internal override DataObject Evaluate(DataObject obj, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
-			return Operand.Evaluate(group, resolver, context);
+		protected override DataObject EvaluateUnary(DataObject obj, IEvaluateContext context) {
+			return Operand.Evaluate(context.GroupResolver, context.VariableResolver, context.QueryContext);
+		}
+
+		protected override void WriteTo(ISqlWriter writer) {
+			writer.Write("(");
+			writer.Write(Operand);
+			writer.Write(")");
 		}
 	}
 }

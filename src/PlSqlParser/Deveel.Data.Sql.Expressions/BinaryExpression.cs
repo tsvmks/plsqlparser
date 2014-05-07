@@ -14,6 +14,7 @@
 //    limitations under the License.
 
 using System;
+using System.Linq;
 
 using Deveel.Data.DbSystem;
 
@@ -32,10 +33,47 @@ namespace Deveel.Data.Sql.Expressions {
 			get { return ExpressionType.AsOperator(); }
 		}
 
-		internal abstract DataObject Evaluate(DataObject ob1,
-			DataObject ob2,
-			IGroupResolver group,
-			IVariableResolver resolver,
-			IQueryContext context);
+		protected abstract DataObject EvaluateBinary(DataObject ob1, DataObject ob2, IEvaluateContext context);
+
+		protected override void WriteTo(ISqlWriter writer) {
+			writer.Write(Left);
+			writer.Write(" {0} ", Operator.AsString());
+			writer.Write(Right);
+		}
+
+		protected override DataObject OnEvaluate(IExpressionEvaluator evaluator) {
+			var sortedEval = new[] {
+				new SortedEvalInfo(0, Left),
+				new SortedEvalInfo(1, Right)
+			}
+				.OrderByDescending(x => x.Precedence)
+				.ToArray();
+
+			foreach (var evalInfo in sortedEval) {
+				evalInfo.Result = evaluator.Evaluate(evalInfo.Expression);
+			}
+
+			var results = sortedEval
+				.OrderBy(x => x.Offset)
+				.Select(x => x.Result)
+				.ToArray();
+
+			return EvaluateBinary(results[0], results[1], evaluator.Context);
+		}
+
+		private class SortedEvalInfo {
+			public SortedEvalInfo(int offset, Expression expression) {
+				Offset = offset;
+				Expression = expression;
+			}
+
+			public int Offset { get; private set; }
+			public DataObject Result { get; set; }
+			public Expression Expression { get; private set; }
+
+			public int Precedence {
+				get { return Expression.Precedence; }
+			}
+		}
 	}
 }

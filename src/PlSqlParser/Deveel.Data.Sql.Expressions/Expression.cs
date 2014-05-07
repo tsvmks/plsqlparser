@@ -34,8 +34,7 @@ namespace Deveel.Data.Sql.Expressions {
 				return 58;
 			if (ExpressionType == ExpressionType.Query)
 				return 56;
-			if (ExpressionType == ExpressionType.Cast ||
-				ExpressionType == ExpressionType.Is)
+			if (ExpressionType == ExpressionType.Is)
 				return 40;
 			if (ExpressionType == ExpressionType.Multiply ||
 			    ExpressionType == ExpressionType.Divide ||
@@ -65,6 +64,27 @@ namespace Deveel.Data.Sql.Expressions {
 
 		public static Expression Visit(Expression expression, IExpressionVisitor visitor) {
 			return expression.Visit(visitor);
+		}
+
+		protected virtual DataObject OnEvaluate(IExpressionEvaluator evaluator) {
+			throw new NotSupportedException(String.Format("Expression {0} does not support evaluation", ExpressionType));
+		}
+
+		public DataObject Evaluate() {
+			return Evaluate(null);
+		}
+
+		public DataObject Evaluate(IQueryContext context) {
+			return Evaluate(null, context);
+		}
+
+		public DataObject Evaluate(IVariableResolver resolver, IQueryContext context) {
+			return Evaluate(null, resolver, context);
+		}
+
+		public DataObject Evaluate(IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
+			var evaluator = new Evaluator(group, resolver, context);
+			return evaluator.Evaluate(this);
 		}
 
 		#region Factories
@@ -212,7 +232,11 @@ namespace Deveel.Data.Sql.Expressions {
 			return new SmallerOrEqualExpression(left, right);
 		}
 
-		public static UnaryExpression Negative(Expression expression) {
+		public static UnaryExpression Negative(Expression operand) {
+			throw new NotImplementedException();
+		}
+
+		public static Expression Positive(Expression operand) {
 			throw new NotImplementedException();
 		}
 
@@ -240,6 +264,10 @@ namespace Deveel.Data.Sql.Expressions {
 			return new VariableExpression(name);
 		}
 
+		public static VariableRefExpression VariableRef(ObjectName variableName) {
+			return new VariableRefExpression(variableName);
+		}
+
 		public static FunctionCallExpression FunctionCall(Expression obj, ObjectName functionName, IEnumerable<Expression> arguments) {
 			return new FunctionCallExpression(obj, functionName, arguments);
 		}
@@ -264,22 +292,33 @@ namespace Deveel.Data.Sql.Expressions {
 			return new ConditionalExpression(test, ifTrue, ifFalse);
 		}
 
+		public static IsExpression Is(Expression left, Expression right) {
+			return new IsExpression(left, right);
+		}
 
 		public static Expression Conditional(Expression test, Expression ifTrue) {
 			return Conditional(test, ifTrue, null);
 		}
 
-		public static TypeIsExpression Is(Expression expression, DataType type) {
-			return new TypeIsExpression(expression, type);
-		}
-
 		public static UnaryExpression Unary(ExpressionType type, Expression expression) {
-			if (type == ExpressionType.Negate)
+			if (type == ExpressionType.Negative)
 				return Negative(expression);
 			if (type == ExpressionType.Not)
 				return Not(expression);
 
 			throw new NotImplementedException();
+		}
+
+		public static Expression All(Expression first, ExpressionType subType, Expression second) {
+			throw new NotImplementedException();
+		}
+
+		public static ConstantExpression Array(IEnumerable<Expression> list) {
+			return Constant(new DataObject(new ArrayType(), list));
+		}
+
+		public static QueryExpression Query(TableSelectExpression expression) {
+			return new QueryExpression(expression);
 		}
 
 		#endregion
@@ -299,6 +338,10 @@ namespace Deveel.Data.Sql.Expressions {
 			return writer.ToString();
 		}
 
+		object IPreparable.Prepare(IExpressionPreparer preparer) {
+			return preparer.Prepare(this);
+		}
+
 		#region ExpressionStringWriter
 
 		class ExpressionStringWriter : ExpressionVisitor {
@@ -312,56 +355,69 @@ namespace Deveel.Data.Sql.Expressions {
 				Visit(expression);
 			}
 
-			protected override Expression VisitBinary(BinaryExpression expression) {
-				expression.Left.WriteTo(writer);
-				writer.Write(" {0} ", expression.Operator.AsString());
-				expression.Right.WriteTo(writer);
-				return expression;
+			protected override Expression Visit(Expression exp) {
+				exp.WriteTo(writer);
+				return exp;
+			}
+		}
+
+		#endregion
+
+		#region Evaluator
+
+		class Evaluator : ExpressionVisitor, IExpressionEvaluator {
+			public Evaluator(IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
+				Context = new EvaluateContext(group, resolver, context);
 			}
 
-			protected override Expression VisitConstant(ConstantExpression expression) {
-				writer.Write(expression.Value);
-				return expression;
-			}
+			public DataObject Result { get; private set; }
 
-			protected override SubsetExpression VisitSubset(SubsetExpression expression) {
-				writer.Write("(");
-				expression.Operand.WriteTo(writer);
-				writer.Write(")");
-				return expression;
-			}
+			#region EvaluateContext
 
-			protected override Expression VisitVariable(VariableExpression expression) {
-				writer.Write(":{0}", expression.VariableName);
-				return expression;
-			}
-
-			protected override Expression VisitConditional(ConditionalExpression expression) {
-				writer.Write("CASE ");
-				expression.IfTrue.WriteTo(writer);
-				writer.Write(" WHEN ");
-				expression.Test.WriteTo(writer);
-
-				if (expression.IfFalse != null) {
-					writer.Write(" THEN ");
-					expression.IfFalse.WriteTo(writer);
+			class EvaluateContext : IEvaluateContext {
+				public EvaluateContext(IGroupResolver groupResolver, IVariableResolver variableResolver, IQueryContext queryContext) {
+					QueryContext = queryContext;
+					VariableResolver = variableResolver;
+					GroupResolver = groupResolver;
 				}
 
-				writer.Write(" END");
+				public IQueryContext QueryContext { get; private set; }
 
+				public IGroupResolver GroupResolver { get; private set; }
+
+				public IVariableResolver VariableResolver { get; private set; }
+			}
+
+			#endregion
+
+			public IEvaluateContext Context { get; private set; }
+
+			public DataObject Evaluate(Expression expression) {
+				Visit(expression);
+				return Result;
+			}
+
+			protected override Expression Visit(Expression expression) {
+				Result = expression.OnEvaluate(this);
 				return expression;
 			}
 		}
 
 		#endregion
 
-		public static SubQueryExpression Query(TableSelectExpression expression) {
-			return new SubQueryExpression(expression);
-		}
-
-		public static Expression Operator(DataObject first, Operator op, DataObject second) {
+		internal static Expression Operator(DataObject first, Operator op, DataObject second) {
 			if (op == Expressions.Operator.Add)
 				return Add(Constant(first), Constant(second));
+			if (op == Expressions.Operator.Subtract)
+				return Subtract(Constant(first), Constant(second));
+			if (op == Expressions.Operator.Multiply)
+				return Multiply(Constant(first), Constant(second));
+			if (op == Expressions.Operator.Divide)
+				return Divide(Constant(first), Constant(second));
+			if (op == Expressions.Operator.Modulo)
+				return Modulo(Constant(first), Constant(second));
+			
+			// TODO: Exponent
 
 			if (op == Expressions.Operator.Equal)
 				return Equal(Constant(first), Constant(second));
@@ -370,16 +426,14 @@ namespace Deveel.Data.Sql.Expressions {
 
 			if (op == Expressions.Operator.Smaller)
 				return Smaller(Constant(first), Constant(second));
+			if (op == Expressions.Operator.Greater)
+				return Greater(Constant(first), Constant(second));
+			if (op == Expressions.Operator.SmallerOrEqual)
+				return SmallerOrEqual(Constant(first), Constant(second));
+			if (op == Expressions.Operator.GreaterOrEqual)
+				return GreaterOrEqual(Constant(first), Constant(second));
 
 			throw new ArgumentException();
-		}
-
-		public static Expression All(Expression first, ExpressionType subType, Expression second) {
-			throw new NotImplementedException();
-		}
-
-		public static ConstantExpression Array(IEnumerable<Expression> list) {
-			return Constant(new DataObject(new ArrayType(), list));
 		}
 	}
 }

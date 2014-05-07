@@ -26,5 +26,13 @@ namespace Deveel.Data.Sql.Expressions {
 		public override ExpressionType ExpressionType {
 			get { return ExpressionType.Variable; }
 		}
+
+		protected override DataObject OnEvaluate(IExpressionEvaluator evaluator) {
+			return evaluator.Context.VariableResolver.Resolve(VariableName);
+		}
+
+		protected override void WriteTo(ISqlWriter writer) {
+			writer.Write(VariableName);
+		}
 	}
 }

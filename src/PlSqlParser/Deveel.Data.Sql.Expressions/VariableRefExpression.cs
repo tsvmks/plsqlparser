@@ -15,20 +15,26 @@
 
 using System;
 
-using Deveel.Data.DbSystem;
-
 namespace Deveel.Data.Sql.Expressions {
-	public sealed class SubtractExpression : BinaryExpression {
-		public SubtractExpression(Expression left, Expression right) 
-			: base(left, right) {
+	[Serializable]
+	public sealed class VariableRefExpression : Expression {
+		public VariableRefExpression(ObjectName variableName) {
+			VariableName = variableName;
 		}
+
+		public ObjectName VariableName { get; private set; }
 
 		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Subtract; }
+			get { return ExpressionType.VariableRef; }
 		}
 
-		protected override DataObject EvaluateBinary(DataObject ob1, DataObject ob2, IEvaluateContext context) {
-			return ob1.Subtract(ob2);
+		protected override void WriteTo(ISqlWriter writer) {
+			writer.Write(":");
+			writer.Write(VariableName);
+		}
+
+		protected override DataObject OnEvaluate(IExpressionEvaluator evaluator) {
+			return evaluator.Context.VariableResolver.Resolve(VariableName);
 		}
 	}
 }

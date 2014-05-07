@@ -43,11 +43,11 @@ namespace Deveel.Data.Sql.Expressions {
 				return aggregateFound;
 			}
 
-			protected override Expression VisitMethodCall(FunctionCallExpression expression) {
+			protected override Expression VisitFunctionCall(FunctionCallExpression expression) {
 				if (expression.IsAggregate(queryContext))
 					aggregateFound = true;
 
-				return base.VisitMethodCall(expression);
+				return base.VisitFunctionCall(expression);
 			}
 
 			protected override Expression VisitConstant(ConstantExpression expression) {

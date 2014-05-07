@@ -12,6 +12,7 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+
 using System;
 
 namespace Deveel.Data.Sql.Expressions {
@@ -19,6 +20,8 @@ namespace Deveel.Data.Sql.Expressions {
 		Constant,
 
 		// Operators
+
+		// Multiplicative
 		Add,
 		Concat,
 		Subtract,
@@ -27,6 +30,7 @@ namespace Deveel.Data.Sql.Expressions {
 		Modulo,
 		Exponent,
 
+		// Relational
 		Equal,
 		NotEqual,
 		Greater,
@@ -34,8 +38,10 @@ namespace Deveel.Data.Sql.Expressions {
 		Smaller,
 		SmallerOrEqual,
 
+		Is,
 		Like,
 
+		// Sub-sets
 		Any,
 		All,
 
@@ -43,20 +49,22 @@ namespace Deveel.Data.Sql.Expressions {
 		And,
 		Or,
 
+		// Unary 
 		Not,
-		Negate,
-		Is,
+		Negative,
+		Positive,
 
 		Conditional,
 		Call,
-		Cast,
 
+		// Variables
 		Variable,
 		CorrelatedVariable,
+		VariableRef,
 
 		Subset,
 		Query,
 		Assign,
-		TypeIs
+		Column
 	}
 }

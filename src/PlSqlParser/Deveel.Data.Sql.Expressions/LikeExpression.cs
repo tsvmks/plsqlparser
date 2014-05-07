@@ -36,7 +36,7 @@ namespace Deveel.Data.Sql.Expressions {
 			get { return ExpressionType.Like; }
 		}
 
-		internal override DataObject Evaluate(DataObject ob1, DataObject ob2, IGroupResolver @group, IVariableResolver resolver, IQueryContext context) {
+		protected override DataObject EvaluateBinary(DataObject ob1, DataObject ob2, IEvaluateContext context) {
 			if (ob1.IsNull)
 				return ob1;
 			if (ob2.IsNull)

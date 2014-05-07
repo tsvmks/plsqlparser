@@ -18,6 +18,7 @@ using System;
 using Deveel.Data.DbSystem;
 
 namespace Deveel.Data.Sql.Expressions {
+	[Serializable]
 	public sealed class OrExpression : BinaryExpression {
 		public OrExpression(Expression left, Expression right) 
 			: base(left, right) {
@@ -27,7 +28,7 @@ namespace Deveel.Data.Sql.Expressions {
 			get { return ExpressionType.Or; }
 		}
 
-		internal override DataObject Evaluate(DataObject ob1, DataObject ob2, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
+		protected override DataObject EvaluateBinary(DataObject ob1, DataObject ob2, IEvaluateContext context) {
 			bool? b1 = ob1.ToBoolean();
 			bool? b2 = ob2.ToBoolean();
 

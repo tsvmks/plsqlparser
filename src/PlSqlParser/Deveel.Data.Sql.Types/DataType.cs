@@ -18,12 +18,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
+using Deveel.Data.Sql.Expressions;
 using Deveel.Data.Sql.Parser;
 
 namespace Deveel.Data.Sql.Types {
 	[Serializable]
 	[DebuggerDisplay("{ToString(), nq}")]
-	public abstract class DataType : IComparer<DataObject> {
+	public abstract class DataType : IComparer<DataObject>, ISqlElement {
 		private static readonly PlSql Parser;
 
 		protected DataType(string name, SqlType sqlType) {
@@ -68,7 +69,9 @@ namespace Deveel.Data.Sql.Types {
 		}
 
 		public override string ToString() {
-			return Name;
+			var writer = new StringSqlWriter();
+			WriteTo(writer);
+			return writer.ToString();
 		}
 
 		public override bool Equals(object obj) {
@@ -81,6 +84,18 @@ namespace Deveel.Data.Sql.Types {
 
 		public override int GetHashCode() {
 			return Name.GetHashCode();
+		}
+
+		object IPreparable.Prepare(IExpressionPreparer preparer) {
+			return this;
+		}
+
+		void ISqlElement.ToString(ISqlWriter writer) {
+			WriteTo(writer);
+		}
+
+		protected virtual void WriteTo(ISqlWriter writer) {
+			writer.Write(Name);
 		}
 
 		public static DataType Parse(string s) {

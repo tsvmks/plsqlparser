@@ -15,8 +15,6 @@
 
 using System;
 
-using Deveel.Data.DbSystem;
-
 namespace Deveel.Data.Sql.Expressions {
 	[Serializable]
 	public sealed class NotExpression : UnaryExpression {
@@ -28,7 +26,7 @@ namespace Deveel.Data.Sql.Expressions {
 			get { return ExpressionType.Not; }
 		}
 
-		internal override DataObject Evaluate(DataObject obj, IGroupResolver group, IVariableResolver resolver, IQueryContext context) {
+		protected override DataObject EvaluateUnary(DataObject obj, IEvaluateContext context) {
 			return obj.Not();
 		}
 	}

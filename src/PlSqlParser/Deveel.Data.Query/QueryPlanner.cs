@@ -75,11 +75,11 @@ namespace Deveel.Data.Query {
 			}
 
 			public bool CanPrepare(Expression element) {
-				return element is SubQueryExpression;
+				return element is QueryExpression;
 			}
 
 			public Expression Prepare(Expression expression) {
-				TableSelectExpression sqlExpr = ((SubQueryExpression)expression).SelectExpression;
+				TableSelectExpression sqlExpr = ((QueryExpression)expression).SelectExpression;
 				TableExpressionFromSet sqlFromSet = GenerateFromSet(sqlExpr, db);
 				sqlFromSet.Parent = fromSet;
 				IQueryPlanNode sqlPlan = FormQueryPlan(db, sqlExpr, sqlFromSet, null);

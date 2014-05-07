@@ -18,17 +18,18 @@ using System;
 using Deveel.Data.DbSystem;
 
 namespace Deveel.Data.Sql.Expressions {
-	public sealed class SubtractExpression : BinaryExpression {
-		public SubtractExpression(Expression left, Expression right) 
+	[Serializable]
+	public sealed class IsExpression : BinaryExpression {
+		public IsExpression(Expression left, Expression right) 
 			: base(left, right) {
 		}
 
 		public override ExpressionType ExpressionType {
-			get { return ExpressionType.Subtract; }
+			get { return ExpressionType.Is; }
 		}
 
 		protected override DataObject EvaluateBinary(DataObject ob1, DataObject ob2, IEvaluateContext context) {
-			return ob1.Subtract(ob2);
+			return ob1.Is(ob2);
 		}
 	}
 }

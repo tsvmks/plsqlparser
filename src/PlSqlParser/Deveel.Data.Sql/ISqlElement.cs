@@ -14,10 +14,11 @@
 //    limitations under the License.
 
 using System;
-using System.Text;
+
+using Deveel.Data.Sql.Expressions;
 
 namespace Deveel.Data.Sql {
-	public interface ISqlElement {
+	public interface ISqlElement : IPreparable {
 		void ToString(ISqlWriter writer);
 	}
 }
